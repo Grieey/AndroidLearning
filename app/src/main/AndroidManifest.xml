@@ -23,7 +23,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.learning.androidlearning.SampleActivity"
+            android:name="com.learning.androidlearning.sample.SampleComponentsActivity"
             android:exported="true"/>
     </application>
 
