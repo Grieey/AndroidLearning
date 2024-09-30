@@ -1,6 +1,8 @@
 package com.learning.androidlearning
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,6 +17,13 @@ class MainActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        // Add a button to navigate to SampleActivity
+        val button = findViewById<Button>(R.id.buttonToSampleActivity)
+        button.setOnClickListener {
+            val intent = Intent(this, SampleActivity::class.java)
+            startActivity(intent)
         }
     }
 }
