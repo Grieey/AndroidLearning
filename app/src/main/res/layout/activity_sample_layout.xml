@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- FrameLayout 示例 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FrameLayout 示例"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="#EEEEEE">
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:background="#FF0000" />
+
+            <View
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:background="#00FF00" />
+
+            <View
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="bottom|end"
+                android:background="#0000FF" />
+        </FrameLayout>
+
+        <!-- LinearLayout 示例 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LinearLayout 示例"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="按钮 1" />
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="按钮 2" />
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="按钮 3" />
+        </LinearLayout>
+
+        <!-- RelativeLayout 示例 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RelativeLayout 示例"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="#EEEEEE">
+
+            <View
+                android:id="@+id/centerView"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_centerInParent="true"
+                android:background="#FF00FF" />
+
+            <View
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_above="@id/centerView"
+                android:layout_toStartOf="@id/centerView"
+                android:background="#FFFF00" />
+
+            <View
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_below="@id/centerView"
+                android:layout_toEndOf="@id/centerView"
+                android:background="#00FFFF" />
+        </RelativeLayout>
+
+        <!-- ConstraintLayout 示例 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ConstraintLayout 示例"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="#EEEEEE">
+
+            <View
+                android:id="@+id/topLeftView"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="#FF9800"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <View
+                android:id="@+id/bottomRightView"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="#4CAF50"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <View
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:background="#2196F3"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+</ScrollView>

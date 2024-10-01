@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.learning.androidlearning.sample.SampleComponentsActivity
+import com.learning.androidlearning.sample.SampleLayoutActivity
 
 /*
  * Java equivalent:
@@ -46,9 +47,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Add a button to navigate to SampleActivity
-        val button = findViewById<Button>(R.id.buttonToSampleActivity)
-        button.setOnClickListener {
+        val buttonToSample = findViewById<Button>(R.id.buttonToSampleActivity)
+        buttonToSample.setOnClickListener {
             val intent = Intent(this, SampleComponentsActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to SampleLayoutActivity
+        val buttonToLayout = findViewById<Button>(R.id.buttonToLayoutActivity)
+        buttonToLayout.setOnClickListener {
+            val intent = Intent(this, SampleLayoutActivity::class.java)
             startActivity(intent)
         }
     }
