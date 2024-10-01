@@ -1,0 +1,13 @@
+<resources>
+
+    <style name="CustomBottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemIconSize">40dp</item>
+        <item name="itemTextAppearanceActive">@style/BottomNavigationViewTextStyle</item>
+        <item name="itemTextAppearanceInactive">@style/BottomNavigationViewTextStyle</item>
+        <item name="itemIconPadding">8dp</item>
+    </style>
+
+    <style name="BottomNavigationViewTextStyle">
+        <item name="android:textSize">12sp</item>
+    </style>
+</resources>

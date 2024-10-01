@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">AndroidLearning</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_chats">Chats</string>
+    <string name="nav_profile">Profile</string>
+    <string name="profile_name">Jane</string>
+    <string name="profile_location">SAN FRANCISCO, CA</string>
+    <string name="profile_btn_follow">FOLLOW JANE</string>
+    <string name="profile_message">MESSAGE</string>
 </resources>

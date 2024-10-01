@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
+import com.learning.androidlearning.sample.profile.SampleProfileActivity
 
 /*
  * Java equivalent:
@@ -57,6 +58,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToLayout = findViewById<Button>(R.id.buttonToLayoutActivity)
         buttonToLayout.setOnClickListener {
             val intent = Intent(this, SampleLayoutActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to SampleProfileActivity
+        val buttonToProfile = findViewById<Button>(R.id.buttonToProfileActivity)
+        buttonToProfile.setOnClickListener {
+            val intent = Intent(this, SampleProfileActivity::class.java)
             startActivity(intent)
         }
     }

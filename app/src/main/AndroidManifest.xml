@@ -26,6 +26,7 @@
             android:name="com.learning.androidlearning.sample.SampleComponentsActivity"
             android:exported="true"/>
         <activity android:name=".sample.SampleLayoutActivity" />
+        <activity android:name=".sample.profile.SampleProfileActivity" />
     </application>
 
 </manifest>
