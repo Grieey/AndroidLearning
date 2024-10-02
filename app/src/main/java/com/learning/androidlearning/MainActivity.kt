@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivity
+import com.learning.androidlearning.sample.SampleViewPagerActivity
 
 /*
  * Java equivalent:
@@ -65,6 +66,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToProfile = findViewById<Button>(R.id.buttonToProfileActivity)
         buttonToProfile.setOnClickListener {
             val intent = Intent(this, SampleProfileActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to SampleViewPagerActivity
+        val buttonToViewPager = findViewById<Button>(R.id.buttonToViewPagerActivity)
+        buttonToViewPager.setOnClickListener {
+            val intent = Intent(this, SampleViewPagerActivity::class.java)
             startActivity(intent)
         }
     }

@@ -7,44 +7,45 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <Button
         android:id="@+id/buttonToSampleActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Go to Sample Activity"
+        android:text="Go to Sample Components"
+        app:layout_constraintBottom_toTopOf="@+id/buttonToLayoutActivity"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textView" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <!-- 在现有的 buttonToSampleActivity 按钮下方添加 -->
     <Button
         android:id="@+id/buttonToLayoutActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Go to Layout Samples"
+        android:text="Go to Sample Layout"
+        app:layout_constraintBottom_toTopOf="@+id/buttonToProfileActivity"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToSampleActivity" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonToSampleActivity" />
 
-    <!-- 在现有的 buttonToLayoutActivity 按钮下方添加 -->
     <Button
         android:id="@+id/buttonToProfileActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Go to Profile Sample"
+        android:text="Go to Sample Profile"
+        app:layout_constraintBottom_toTopOf="@+id/buttonToViewPagerActivity"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToLayoutActivity" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonToLayoutActivity" />
+
+    <Button
+        android:id="@+id/buttonToViewPagerActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Go to ViewPager Sample"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonToProfileActivity" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -27,6 +27,7 @@
             android:exported="true"/>
         <activity android:name=".sample.SampleLayoutActivity" />
         <activity android:name=".sample.profile.SampleProfileActivity" />
+        <activity android:name=".sample.SampleViewPagerActivity" />
     </application>
 
 </manifest>
