@@ -7,7 +7,7 @@
     <com.learning.androidlearning.sample.customview.AnimatedTextView
         android:id="@+id/animatedTextView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

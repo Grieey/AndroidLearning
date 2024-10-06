@@ -43,7 +43,7 @@ class AnimatedTextView @JvmOverloads constructor(
             while (isActive) {
                 val text = texts[index]
                 animateTextChange(text)
-                delay(500)
+                delay(2000)
                 index = (index + 1) % texts.size
             }
         }
