@@ -11,6 +11,7 @@ import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivity
+import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
 
 /*
  * Java equivalent:
@@ -73,6 +74,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToViewPager = findViewById<Button>(R.id.buttonToViewPagerActivity)
         buttonToViewPager.setOnClickListener {
             val intent = Intent(this, SampleViewPagerActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to SampleCustomViewActivity
+        val buttonToCustomView = findViewById<Button>(R.id.buttonToCustomViewActivity)
+        buttonToCustomView.setOnClickListener {
+            val intent = Intent(this, SampleCustomViewActivity::class.java)
             startActivity(intent)
         }
     }
