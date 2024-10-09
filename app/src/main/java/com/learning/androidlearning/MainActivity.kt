@@ -83,5 +83,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, SampleCustomViewActivity::class.java)
             startActivity(intent)
         }
+
+        // test
     }
 }
