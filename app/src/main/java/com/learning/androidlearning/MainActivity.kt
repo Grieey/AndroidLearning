@@ -11,7 +11,9 @@ import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivity
+import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
 import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
+import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 
 /*
  * Java equivalent:
@@ -66,14 +68,14 @@ class MainActivity : AppCompatActivity() {
         // Add a button to navigate to SampleProfileActivity
         val buttonToProfile = findViewById<Button>(R.id.buttonToProfileActivity)
         buttonToProfile.setOnClickListener {
-            val intent = Intent(this, SampleProfileActivity::class.java)
+            val intent = Intent(this, SampleProfileActivityJavaVersion::class.java)
             startActivity(intent)
         }
 
         // Add a button to navigate to SampleViewPagerActivity
         val buttonToViewPager = findViewById<Button>(R.id.buttonToViewPagerActivity)
         buttonToViewPager.setOnClickListener {
-            val intent = Intent(this, SampleViewPagerActivity::class.java)
+            val intent = Intent(this, SampleViewPagerActivityJavaVersion::class.java)
             startActivity(intent)
         }
 

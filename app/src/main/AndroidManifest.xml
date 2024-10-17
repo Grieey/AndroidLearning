@@ -24,10 +24,10 @@
         </activity>
         <activity
             android:name="com.learning.androidlearning.sample.SampleComponentsActivity"
-            android:exported="true"/>
+            android:exported="true" />
         <activity android:name=".sample.SampleLayoutActivity" />
-        <activity android:name=".sample.profile.SampleProfileActivity" />
-        <activity android:name=".sample.SampleViewPagerActivity" />
+        <activity android:name=".sample.profile.SampleProfileActivityJavaVersion" />
+        <activity android:name=".sample.SampleViewPagerActivityJavaVersion" />
         <activity android:name=".sample.customview.SampleCustomViewActivity" />
     </application>
 

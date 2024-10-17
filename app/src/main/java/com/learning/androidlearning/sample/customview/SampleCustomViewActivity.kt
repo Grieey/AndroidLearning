@@ -9,7 +9,7 @@ class SampleCustomViewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sample_custom_view)
 
-        val animatedTextView = findViewById<AnimatedTextView>(R.id.animatedTextView)
+        val animatedTextView = findViewById<AnimatedTextViewJavaVersion>(R.id.animatedTextView)
         val texts = listOf("Hello", "World", "This", "Is", "Animated", "Text")
         animatedTextView.startAnimation(texts)
     }
