@@ -14,6 +14,7 @@ import com.learning.androidlearning.sample.SampleViewPagerActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
 import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
+import com.learning.androidlearning.sample.database.SampleDatabaseActivity
 
 /*
  * Java equivalent:
@@ -83,6 +84,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToCustomView = findViewById<Button>(R.id.buttonToCustomViewActivity)
         buttonToCustomView.setOnClickListener {
             val intent = Intent(this, SampleCustomViewActivity::class.java)
+            startActivity(intent)
+        }
+
+        // 在现有按钮之后添加数据库示例按钮
+        val buttonToDatabase = findViewById<Button>(R.id.buttonToDatabaseActivity)
+        buttonToDatabase.setOnClickListener {
+            val intent = Intent(this, SampleDatabaseActivity::class.java)
             startActivity(intent)
         }
 

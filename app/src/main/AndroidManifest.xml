@@ -29,6 +29,7 @@
         <activity android:name=".sample.profile.SampleProfileActivityJavaVersion" />
         <activity android:name=".sample.SampleViewPagerActivityJavaVersion" />
         <activity android:name=".sample.customview.SampleCustomViewActivity" />
+        <activity android:name=".sample.database.SampleDatabaseActivity" android:exported="false" />
     </application>
 
 </manifest>
