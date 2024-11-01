@@ -15,6 +15,7 @@ import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
 import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 import com.learning.androidlearning.sample.database.SampleDatabaseActivity
+import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
 
 /*
  * Java equivalent:
@@ -87,14 +88,19 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // 在现有按钮之后添加数据库示例按钮
+        // Add a button to navigate to database sample
         val buttonToDatabase = findViewById<Button>(R.id.buttonToDatabaseActivity)
         buttonToDatabase.setOnClickListener {
             val intent = Intent(this, SampleDatabaseActivity::class.java)
             startActivity(intent)
         }
 
-        // test
+        // Add after other buttons
+        val buttonToSchedule = findViewById<Button>(R.id.buttonToScheduleActivity)
+        buttonToSchedule.setOnClickListener {
+            val intent = Intent(this, ScheduleGridActivity::class.java)
+            startActivity(intent)
+        }
     }
 
 }
