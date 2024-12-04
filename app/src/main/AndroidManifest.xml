@@ -31,6 +31,7 @@
         <activity android:name=".sample.customview.SampleCustomViewActivity" />
         <activity android:name=".sample.database.SampleDatabaseActivity" android:exported="false" />
         <activity android:name=".sample.schedule.ScheduleGridActivity" android:exported="false" />
+        <activity android:name=".sample.schedule.ScheduleActivity" android:exported="true" />
     </application>
 
 </manifest>

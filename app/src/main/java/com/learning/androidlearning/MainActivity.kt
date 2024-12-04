@@ -16,6 +16,7 @@ import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 import com.learning.androidlearning.sample.database.SampleDatabaseActivity
 import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
+import com.learning.androidlearning.sample.schedule.ScheduleActivity
 
 /*
  * Java equivalent:
@@ -99,6 +100,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToSchedule = findViewById<Button>(R.id.buttonToScheduleActivity)
         buttonToSchedule.setOnClickListener {
             val intent = Intent(this, ScheduleGridActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to ScheduleActivity
+        val buttonToTimeTable = findViewById<Button>(R.id.buttonToTimeTableActivity)
+        buttonToTimeTable.setOnClickListener {
+            val intent = Intent(this, ScheduleActivity::class.java)
             startActivity(intent)
         }
     }
