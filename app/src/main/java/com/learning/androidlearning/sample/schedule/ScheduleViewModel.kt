@@ -12,6 +12,9 @@ import com.learning.androidlearning.sample.schedule.data.CourseDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDateTime
+import java.time.temporal.TemporalAdjusters
 
 class ScheduleViewModel(application: Application) : AndroidViewModel(application) {
     private val database = CourseDatabase.getDatabase(application)
@@ -21,7 +24,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val courses: StateFlow<List<Course>> = _courses
 
     init {
-        loadCourses()
+//        loadCourses()
+        loadCurrentWeekCourses()
     }
 
     private fun loadCourses() {
@@ -56,6 +60,32 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             val endRow = startRow + course.duration - 1
             course.dayOfWeek == col && row in startRow..endRow
         }
+    }
+
+    /**
+     * Load courses within the specified date range
+     * @param startDate start date of the range
+     * @param endDate end date of the range
+     */
+    fun loadCoursesByDateRange(startDate: LocalDateTime, endDate: LocalDateTime) {
+        viewModelScope.launch {
+            courseDao.getCoursesByDateRange(startDate, endDate).collect {
+                _courses.value = it
+            }
+        }
+    }
+
+    /**
+     * Load courses for current week
+     */
+    fun loadCurrentWeekCourses() {
+        val now = LocalDateTime.now()
+        val startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            .withHour(0).withMinute(0).withSecond(0)
+        val endOfWeek = now.with(TemporalAdjusters.nextOrSame(DayOfWeek.FRIDAY))
+            .withHour(23).withMinute(59).withSecond(59)
+        
+        loadCoursesByDateRange(startOfWeek, endOfWeek)
     }
 
     companion object {

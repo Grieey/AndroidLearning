@@ -134,6 +134,7 @@ class CourseDialogFragment : DialogFragment() {
             description = binding.descriptionEdit.text.toString().trim(),
             dayOfWeek = col,
             startTime = row + 1,
+            // 0,
             duration = binding.durationSpinner.selectedItemPosition + 1,
             color = selectedColor
         )
