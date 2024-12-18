@@ -126,9 +126,17 @@ class DanmuView @JvmOverloads constructor(
             return
         }
 
-        // 修改 y 坐标的计算，确保第一行弹幕完整显示
-        val y = (rowIndex + 1) * (danmuHeight + rowSpacing) // 从第一个完整位置开始
-        val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
+        val y = (rowIndex + 1) * (danmuHeight + rowSpacing)
+        
+        // 根据样式计算宽度，但保持相同的高度
+        val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
+            // 样式1：包含用户名和内容
+            textPaint.measureText(danmu.username + "  " + danmu.content)
+        } else {
+            // 样式2：只包含内容
+            textPaint.measureText(danmu.content)
+        }
+        
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                 (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
@@ -142,12 +150,13 @@ class DanmuView @JvmOverloads constructor(
             startX = lastDanmu.x + lastDanmu.width + safeDistance
         }
 
+        // 使用固定的 danmuHeight
         val holder = DanmuViewHolder(
             danmuItem = danmu,
             x = startX,
             y = y,
             width = totalWidth,
-            height = danmuHeight
+            height = danmuHeight  // 统一使用32dp的高度
         )
         holder.updateRect()
 
@@ -302,29 +311,33 @@ class DanmuView @JvmOverloads constructor(
     private fun drawDanmu(canvas: Canvas, holder: DanmuViewHolder) {
         // 绘制背景
         paint.style = Paint.Style.FILL
-        paint.shader = DanmuConfig.createGradientShader(holder.width, holder.height, holder.danmuItem.hasBorder)
+        paint.shader = DanmuConfig.createGradientShader(
+            holder.width, 
+            holder.height, 
+            holder.danmuItem.style == DanmuItem.STYLE_1
+        )
         val cornerRadius = holder.height / 2
         canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
-        // 只有在需要边框时才绘制
-        if (holder.danmuItem.hasBorder) {
+        // 只在样式1时绘制边框
+        if (holder.danmuItem.style == DanmuItem.STYLE_1) {
             paint.shader = null
             paint.style = Paint.Style.STROKE
             paint.color = Color.parseColor(DanmuConfig.BORDER_COLOR)
             canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
         }
 
-        // 重置画笔样式为填充，以便正确绘制头像
+        // 重置画笔样式
         paint.style = Paint.Style.FILL
-        paint.color = Color.WHITE // 重置颜色
+        paint.color = Color.WHITE
 
-        // 绘制头像
+        // 绘制头像，保持在32dp高度内
         holder.avatarBitmap?.let { avatar ->
             val avatarRect = RectF(
                 holder.x + paddingLeft,
-                holder.y - holder.height,  // 修改头像的垂直位置
+                holder.y - holder.height,
                 holder.x + paddingLeft + avatarSize,
-                holder.y  // 修改头像的垂直位置
+                holder.y
             )
 
             // 保存画布状态
@@ -348,28 +361,42 @@ class DanmuView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // 绘制文本
+        // 绘制文本，确保在32dp高度内垂直居中
         val textX = holder.x + paddingLeft + avatarSize + paddingLeft
-        val textY = holder.y - holder.height/2 + textSize/3  // 调整文本的垂直位置
+        val textY = holder.y - holder.height/2 + textSize/3
 
-        // 绘制用户名
-        textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
-        textPaint.isFakeBoldText = true
-        canvas.drawText(holder.danmuItem.username, textX, textY, textPaint)
+        if (holder.danmuItem.style == DanmuItem.STYLE_1) {
+            // 样式1：绘制用户名
+            textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
+            textPaint.isFakeBoldText = true
+            canvas.drawText(holder.danmuItem.username, textX, textY, textPaint)
+            
+            // 绘制内容
+            val usernameWidth = textPaint.measureText(holder.danmuItem.username)
+            textPaint.color = contentTextColor
+            textPaint.isFakeBoldText = false
+            canvas.drawText(holder.danmuItem.content, textX + usernameWidth + paddingLeft, textY, textPaint)
+        } else {
+            // 样式2：只绘制内容
+            textPaint.color = contentTextColor
+            textPaint.isFakeBoldText = false
+            canvas.drawText(holder.danmuItem.content, textX, textY, textPaint)
+        }
 
-        // 绘制内容
-        val usernameWidth = textPaint.measureText(holder.danmuItem.username)
-        textPaint.color = contentTextColor
-        textPaint.isFakeBoldText = false
-        canvas.drawText(holder.danmuItem.content, textX + usernameWidth + paddingLeft, textY, textPaint)
-
-        // 绘制图片（如果有）
+        // 绘制图片，确保在32dp高度内垂直居中
         holder.imageBitmap?.let { image ->
+            val contentWidth = if (holder.danmuItem.style == DanmuItem.STYLE_1) {
+                textPaint.measureText(holder.danmuItem.username) + paddingLeft + 
+                textPaint.measureText(holder.danmuItem.content)
+            } else {
+                textPaint.measureText(holder.danmuItem.content)
+            }
+            
             val imageRect = RectF(
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft,
-                holder.y - holder.height/2 - imageSize/2,  // 调整图片的垂直位置
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft + imageSize,
-                holder.y - holder.height/2 + imageSize/2  // 调整图片的垂直位置
+                textX + contentWidth + imageMarginLeft,
+                holder.y - holder.height/2 - imageSize/2,
+                textX + contentWidth + imageMarginLeft + imageSize,
+                holder.y - holder.height/2 + imageSize/2
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }

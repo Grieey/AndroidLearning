@@ -28,79 +28,30 @@ class DanmuDemoActivity : AppCompatActivity() {
     }
 
     private val testDanmuList = listOf(
-        // 第一列
+        // 样式1的弹幕
         DanmuItem(
             avatar = decodeBase64Url(url),
             username = "短名字",
             content = "这是一条很短的弹幕",
             image = "ic_red_packet",
-            hasBorder = true
+            style = DanmuItem.STYLE_1
         ),
+        // 样式2的弹幕
         DanmuItem(
             avatar = decodeBase64Url(url),
             username = "这是一个特别长的用户名称",
             content = "中等长度的弹幕内容示例",
             image = "ic_red_packet",
-            hasBorder = false
+            style = DanmuItem.STYLE_2
         ),
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "普通用户",
-            content = "这是一条非常非常非常非常非常非常非常非常长的弹幕内容",
-            image = "ic_red_packet",
-            hasBorder = true
-        ),
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户A",
-            content = "第二列第一条",
-            image = "ic_red_packet",
-            hasBorder = false
-        ),
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户B",
-            content = "第二列第二条",
-            image = "ic_red_packet",
-            hasBorder = true
-        ),
-        // ... 继续添加更多数据，直到50条
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户C",
-            content = "这是一条测试弹幕",
-            image = "ic_red_packet",
-            hasBorder = false
-        ),
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户D",
-            content = "弹幕测试内容",
-            image = "ic_red_packet",
-            hasBorder = true
-        ),
-        // ... 继续添加剩余的测试数据，保持交替使用两种样式
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户49",
-            content = "倒数第二条弹幕",
-            image = "ic_red_packet",
-            hasBorder = false
-        ),
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户50",
-            content = "最后一条弹幕",
-            image = "ic_red_packet",
-            hasBorder = true
-        )
+        // ... 继续添加更多测试数据，交替使用两种样式 ...
     ) + List(45) { index ->
         DanmuItem(
             avatar = decodeBase64Url(url),
             username = "用户${index + 6}",
             content = "这是第${index + 6}条测试弹幕",
             image = "ic_red_packet",
-            hasBorder = index % 2 == 0
+            style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
         )
     }
 
@@ -125,7 +76,7 @@ class DanmuDemoActivity : AppCompatActivity() {
                     username = "用户名",
                     content = content,
                     image = "ic_red_packet",
-                    hasBorder = Random.nextBoolean() // 随机选择样式
+                    style = if (Random.nextBoolean()) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
                 )
                 danmuView.addDanmu(newDanmu)
                 danmuInput.text?.clear()

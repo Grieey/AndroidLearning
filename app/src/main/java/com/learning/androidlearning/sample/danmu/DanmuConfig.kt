@@ -6,14 +6,6 @@ import android.graphics.Shader
 import kotlin.math.cos
 import kotlin.math.sin
 
-data class DanmuItem(
-    val avatar: String, // 头像URL或本地资源
-    val username: String,
-    val content: String,
-    val image: String? = null,// 可选的图片URL或本地资源
-    val hasBorder: Boolean = false
-)
-
 object DanmuConfig {
     const val MAX_LINES = 3
     const val BORDER_COLOR = "#FFBABA"
