@@ -133,42 +133,37 @@ class DanmuView @JvmOverloads constructor(
     }
 
     fun addDanmu(danmu: DanmuItem) {
-        val rowIndex = findBestRow()
-        if (rowIndex < 0) {
-            return
-        }
-
+        // 找到当前最少弹幕的行
+        val rowIndex = (0 until DanmuConfig.MAX_LINES).minByOrNull { danmuRows[it].size } ?: 0
+        
         val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
         
-        // 根据样式计算宽度，但保持相同的高度
+        // 计算宽度
         val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
-            // 样式1：包含用户名和内容
             textPaint.measureText(danmu.username + "  " + danmu.content)
         } else {
-            // 样式2：只包含内容
             textPaint.measureText(danmu.content)
         }
         
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                 (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
-        // 计算新弹幕的起始 x 坐标
-        var startX = width.toFloat() // 默认从屏幕右边开始
+        // 计算 x 坐标（从屏幕右边开始）
+        var startX = width.toFloat()
+        
+        // 如果该行已经有弹幕，确保新弹幕在最后一个弹幕后面
         val row = danmuRows[rowIndex]
         if (row.isNotEmpty()) {
-            // 获取同行最后一个弹幕
             val lastDanmu = row.last()
-            // 新弹幕的起始位置 = 最后一个弹幕的右边界 + 安全距离
-            startX = lastDanmu.x + lastDanmu.width + safeDistance
+            startX = maxOf(startX, lastDanmu.x + lastDanmu.width + safeDistance)
         }
 
-        // 使用固定的 danmuHeight
         val holder = DanmuViewHolder(
             danmuItem = danmu,
             x = startX,
             y = y,
             width = totalWidth,
-            height = danmuHeight  // 统一使用32dp的高度
+            height = danmuHeight
         )
         holder.updateRect()
 
@@ -179,18 +174,10 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun findBestRow(): Int {
+        // 由于我们现在是按列添加，这个方法不再需要查找最佳行
+        // 而是直接返回下一个可用的行号
         for (i in 0 until DanmuConfig.MAX_LINES) {
-            val row = danmuRows[i]
-            if (row.isEmpty()) {
-                return i
-            }
-
-            val lastDanmu = row.last()
-            // 计算最后一个弹幕的右边界到扩展区域右边界的距离
-            val distanceToRight = width * 2 - (lastDanmu.x + lastDanmu.width)
-
-            // 如果距离大于安全距离，则可以添加新弹幕
-            if (distanceToRight >= safeDistance) {
+            if (danmuRows[i].isEmpty()) {
                 return i
             }
         }
@@ -447,27 +434,59 @@ class DanmuView @JvmOverloads constructor(
             override fun run() {
                 if (currentIndex < allDanmuList.size) {
                     addNextColumnDanmu()
-                    // 根据弹幕密度动态调整延迟时间
-                    val delay = calculateNextDelay()
-                    postDelayed(this, delay)
+                    postDelayed(this, calculateNextDelay())
                 }
             }
         }, calculateNextDelay())
     }
 
     private fun addNextColumnDanmu() {
+        // 计算当前列的 x 坐标
+        val columnStartX = width.toFloat()
+        
+        // 尝试在一列中添加最多3条弹幕
         var addedCount = 0
-        while (addedCount < 3 && currentIndex < allDanmuList.size) {
-            val rowIndex = findBestRow()
-            if (rowIndex >= 0) {
-                addDanmu(allDanmuList[currentIndex])
-                currentIndex++
-                addedCount++
+        while (addedCount < DanmuConfig.MAX_LINES && currentIndex < allDanmuList.size) {
+            // 计算当前弹幕应该在的行号
+            val rowIndex = addedCount
+            
+            val danmu = allDanmuList[currentIndex]
+            
+            // 计算 y 坐标
+            val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
+            
+            // 计算弹幕宽度
+            val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
+                textPaint.measureText(danmu.username + "  " + danmu.content)
             } else {
-                // 如果当前没有合适的行，等待下一次尝试
-                break
+                textPaint.measureText(danmu.content)
             }
+            
+            val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
+                    (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
+
+            // 创建 holder
+            val holder = DanmuViewHolder(
+                danmuItem = danmu,
+                x = columnStartX,
+                y = y,
+                width = totalWidth,
+                height = danmuHeight
+            )
+            holder.updateRect()
+
+            // 添加到对应行
+            danmuRows[rowIndex].add(holder)
+            
+            // 加载图片
+            loadAvatar(danmu.avatar, holder)
+            danmu.image?.let { loadImage(it, holder) }
+            
+            currentIndex++
+            addedCount++
         }
+        
+        invalidate()
     }
 
     private fun calculateNextDelay(): Long {

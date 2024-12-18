@@ -17,7 +17,7 @@
         android:id="@+id/danmuView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/design_default_color_secondary"
+        android:background="#e9ffffff"
         app:layout_constraintTop_toBottomOf="@id/replayButton" />
 
     <com.google.android.material.textfield.TextInputLayout

@@ -45,11 +45,11 @@ class DanmuDemoActivity : AppCompatActivity() {
             style = DanmuItem.STYLE_2
         ),
         // ... 继续添加更多测试数据，交替使用两种样式 ...
-    ) + List(45) { index ->
+    )+ List(45) { index ->
         DanmuItem(
             avatar = decodeBase64Url(url),
-            username = "用户${index + 6}",
-            content = "这是第${index + 6}条测试弹幕",
+            username = "用户${index + 3}",
+            content = "这是第${index + 3}条测试弹幕",
             image = "ic_red_packet",
             style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
         )
