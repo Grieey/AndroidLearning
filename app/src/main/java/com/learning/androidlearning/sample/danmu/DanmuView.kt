@@ -51,6 +51,9 @@ class DanmuView @JvmOverloads constructor(
     // 在 DanmuView 类中添加常量
     private val imageMarginLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_image_margin_left).toFloat()
 
+    // 添加行间距属性
+    private val rowSpacing = context.resources.getDimensionPixelSize(R.dimen.danmu_row_spacing).toFloat()
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -123,7 +126,8 @@ class DanmuView @JvmOverloads constructor(
             return
         }
 
-        val y = rowIndex * (danmuHeight + paddingVertical) + paddingVertical + danmuHeight
+        // 修改 y 坐标的计算，确保第一行弹幕完整显示
+        val y = (rowIndex + 1) * (danmuHeight + rowSpacing) // 从第一个完整位置开始
         val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                 (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
@@ -298,15 +302,17 @@ class DanmuView @JvmOverloads constructor(
     private fun drawDanmu(canvas: Canvas, holder: DanmuViewHolder) {
         // 绘制背景
         paint.style = Paint.Style.FILL
-        paint.shader = DanmuConfig.createGradientShader(holder.width, holder.height)
+        paint.shader = DanmuConfig.createGradientShader(holder.width, holder.height, holder.danmuItem.hasBorder)
         val cornerRadius = holder.height / 2
         canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
-        // 绘制边框
-        paint.shader = null
-        paint.style = Paint.Style.STROKE
-        paint.color = Color.parseColor(DanmuConfig.BORDER_COLOR)
-        canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
+        // 只有在需要边框时才绘制
+        if (holder.danmuItem.hasBorder) {
+            paint.shader = null
+            paint.style = Paint.Style.STROKE
+            paint.color = Color.parseColor(DanmuConfig.BORDER_COLOR)
+            canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
+        }
 
         // 重置画笔样式为填充，以便正确绘制头像
         paint.style = Paint.Style.FILL
@@ -316,9 +322,9 @@ class DanmuView @JvmOverloads constructor(
         holder.avatarBitmap?.let { avatar ->
             val avatarRect = RectF(
                 holder.x + paddingLeft,
-                holder.y - holder.height + paddingVertical,
+                holder.y - holder.height,  // 修改头像的垂直位置
                 holder.x + paddingLeft + avatarSize,
-                holder.y - paddingVertical
+                holder.y  // 修改头像的垂直位置
             )
 
             // 保存画布状态
@@ -344,7 +350,7 @@ class DanmuView @JvmOverloads constructor(
 
         // 绘制文本
         val textX = holder.x + paddingLeft + avatarSize + paddingLeft
-        val textY = holder.y - holder.height / 2 + textPaint.textSize / 3
+        val textY = holder.y - holder.height/2 + textSize/3  // 调整文本的垂直位置
 
         // 绘制用户名
         textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
@@ -361,9 +367,9 @@ class DanmuView @JvmOverloads constructor(
         holder.imageBitmap?.let { image ->
             val imageRect = RectF(
                 textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft,
-                holder.y - holder.height / 2 - imageSize / 2, // 垂直居中
+                holder.y - holder.height/2 - imageSize/2,  // 调整图片的垂直位置
                 textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft + imageSize,
-                holder.y - holder.height / 2 + imageSize / 2  // 垂直居中
+                holder.y - holder.height/2 + imageSize/2  // 调整图片的垂直位置
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }

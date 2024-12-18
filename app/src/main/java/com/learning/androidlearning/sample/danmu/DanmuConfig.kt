@@ -3,30 +3,48 @@ package com.learning.androidlearning.sample.danmu
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Shader
+import kotlin.math.cos
+import kotlin.math.sin
 
 data class DanmuItem(
     val avatar: String, // 头像URL或本地资源
     val username: String,
     val content: String,
-    val image: String? = null // 可选的图片URL或本地资源
+    val image: String? = null,// 可选的图片URL或本地资源
+    val hasBorder: Boolean = false
 )
 
 object DanmuConfig {
-    const val CORNER_RADIUS = 25f
+    const val MAX_LINES = 3
     const val BORDER_COLOR = "#FFBABA"
     const val GRADIENT_START_COLOR = "#FFF0D7"
     const val GRADIENT_END_COLOR = "#FFC4C4"
-    const val GRADIENT_ANGLE = 30f
+    const val GRADIENT_START_COLOR_NO_BORDER = "#99FFD7D7"
+    const val GRADIENT_END_COLOR_NO_BORDER = "#99FFC4C4"
     const val USERNAME_COLOR = "#E95905"
-    const val MAX_LINES = 3
-    
-    fun createGradientShader(width: Float, height: Float): Shader {
+    const val CONTENT_TEXT_COLOR = "#333333"
+
+    fun createGradientShader(width: Float, height: Float, hasBorder: Boolean = true): LinearGradient {
+        val colors = if (hasBorder) {
+            intArrayOf(
+                Color.parseColor(GRADIENT_START_COLOR),
+                Color.parseColor(GRADIENT_END_COLOR)
+            )
+        } else {
+            intArrayOf(
+                Color.parseColor(GRADIENT_START_COLOR_NO_BORDER),
+                Color.parseColor(GRADIENT_END_COLOR_NO_BORDER)
+            )
+        }
+
+        val angle = 30f * Math.PI.toFloat() / 180f
         return LinearGradient(
-            0f, 0f,
-            width * kotlin.math.cos(Math.toRadians(GRADIENT_ANGLE.toDouble())).toFloat(),
-            height * kotlin.math.sin(Math.toRadians(GRADIENT_ANGLE.toDouble())).toFloat(),
-            Color.parseColor(GRADIENT_START_COLOR),
-            Color.parseColor(GRADIENT_END_COLOR),
+            0f,
+            0f,
+            width * cos(angle),
+            height * sin(angle),
+            colors,
+            null,
             Shader.TileMode.CLAMP
         )
     }
