@@ -26,7 +26,7 @@ class DanmuView @JvmOverloads constructor(
     private val imageLoader = ImageLoader(context)
 
     private var animator: ValueAnimator? = null
-    private val scrollSpeed = 2f // 像素/毫秒
+    private val scrollSpeed = 4f // 像素/毫秒
     private val danmuHeight = context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
     private val avatarSize = danmuHeight - 2 * context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
     private val paddingLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
@@ -45,6 +45,12 @@ class DanmuView @JvmOverloads constructor(
 
     // 添加可视区域矩形
     private val visibleRect = RectF()
+
+    // 添加图片尺寸常量
+    private val imageSize = context.resources.getDimensionPixelSize(R.dimen.danmu_image_size).toFloat()
+
+    // 在 DanmuView 类中添加常量
+    private val imageMarginLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_image_margin_left).toFloat()
 
     init {
         paint.style = Paint.Style.FILL
@@ -67,18 +73,44 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun updateDanmuPositions() {
-        danmuRows.forEach { row ->
-            val iterator = row.iterator()
-            while (iterator.hasNext()) {
-                val holder = iterator.next()
-                holder.updatePosition(-scrollSpeed)
-                
-                // 当弹幕完全离开可视区域时移除
-                if (holder.x + holder.width < 0) {
-                    iterator.remove()
+        var needsRedraw = false
+        
+        for (row in danmuRows.indices) {
+            val currentRow = danmuRows[row]
+            
+            // 移除已经离开屏幕的弹幕
+            currentRow.removeAll { holder ->
+                val shouldRemove = holder.isOutOfScreen()
+                if (shouldRemove) {
                     onDanmuCompleteListener?.invoke(holder.danmuItem)
                 }
+                shouldRemove
             }
+            
+            // 更新剩余弹幕的位置
+            for (i in currentRow.indices) {
+                val holder = currentRow[i]
+                val prevHolder = if (i > 0) currentRow[i - 1] else null
+                
+                // 更新位置
+                holder.updatePosition(-scrollSpeed)
+                
+                // 如果有前一个弹幕，检查间距
+                prevHolder?.let { prev ->
+                    val currentDistance = holder.x - (prev.x + prev.width)
+                    if (currentDistance < safeDistance) {
+                        // 如果间距小于安全距离，调整位置
+                        holder.x = prev.x + prev.width + safeDistance
+                        holder.updateRect()
+                    }
+                }
+                
+                needsRedraw = true
+            }
+        }
+        
+        if (needsRedraw) {
+            invalidate()
         }
     }
 
@@ -95,12 +127,21 @@ class DanmuView @JvmOverloads constructor(
         val y = rowIndex * (danmuHeight + paddingVertical) + paddingVertical + danmuHeight
         val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth + 
-                        (danmu.image?.let { avatarSize + paddingLeft } ?: 0f) + paddingRight
+                        (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
-        // 确保新弹幕从屏幕右边开始
+        // 计算新弹幕的起始 x 坐标
+        var startX = width.toFloat() // 默认从屏幕右边开始
+        val row = danmuRows[rowIndex]
+        if (row.isNotEmpty()) {
+            // 获取同行最后一个弹幕
+            val lastDanmu = row.last()
+            // 新弹幕的起始位置 = 最后一个弹幕的右边界 + 安全距离
+            startX = lastDanmu.x + lastDanmu.width + safeDistance
+        }
+
         val holder = DanmuViewHolder(
             danmuItem = danmu,
-            x = visibleRect.right,
+            x = startX,
             y = y,
             width = totalWidth,
             height = danmuHeight
@@ -121,16 +162,12 @@ class DanmuView @JvmOverloads constructor(
             }
             
             val lastDanmu = row.last()
-            // 只检查最后一个可见弹幕
-            if (isVisible(lastDanmu)) {
-                if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
-                    return i
-                }
-            } else {
-                // 如果最后一个弹幕不可见，检查是否有足够空间
-                if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
-                    return i
-                }
+            // 计算最后一个弹幕的右边界到屏幕右边界的距离
+            val distanceToRight = width - (lastDanmu.x + lastDanmu.width)
+            
+            // 如果距离大于安全距离，则可以添加新弹幕
+            if (distanceToRight >= safeDistance) {
+                return i
             }
         }
         return -1
@@ -172,6 +209,18 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun loadImage(url: String, holder: DanmuViewHolder) {
+        // 对于本地图片资源，直接从资源加载
+        if (url == "ic_red_packet") {
+            val resourceId = context.resources.getIdentifier(url, "drawable", context.packageName)
+            if (resourceId != 0) {
+                val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
+                holder.imageBitmap = bitmap
+                invalidate()
+            }
+            return
+        }
+
+        // 其他远程图片的加载逻辑保持不变
         if (imageCache.containsKey(url)) {
             holder.imageBitmap = imageCache[url]
             invalidate()
@@ -182,8 +231,8 @@ class DanmuView @JvmOverloads constructor(
             .data(url)
             .target { drawable ->
                 val bitmap = drawable.toBitmap(
-                    width = avatarSize.toInt(),
-                    height = avatarSize.toInt(),
+                    width = imageSize.toInt(),
+                    height = imageSize.toInt(),
                     config = Bitmap.Config.ARGB_8888
                 )
                 imageCache[url] = bitmap
@@ -255,10 +304,10 @@ class DanmuView @JvmOverloads constructor(
         // 绘制图片（如果有）
         holder.imageBitmap?.let { image ->
             val imageRect = RectF(
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + paddingLeft,
-                holder.y - holder.height + paddingVertical,
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + paddingLeft + avatarSize,
-                holder.y - paddingVertical
+                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft,
+                holder.y - holder.height/2 - imageSize/2, // 垂直居中
+                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft + imageSize,
+                holder.y - holder.height/2 + imageSize/2  // 垂直居中
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }

@@ -6,4 +6,6 @@
     <dimen name="danmu_padding_vertical">4dp</dimen>
     <dimen name="danmu_height">32dp</dimen>
     <dimen name="danmu_text_size">11sp</dimen>
+    <dimen name="danmu_image_size">24dp</dimen>
+    <dimen name="danmu_image_margin_left">8dp</dimen>
 </resources> 
