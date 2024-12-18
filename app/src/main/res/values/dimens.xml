@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="danmu_safe_distance">12dp</dimen>
+    <dimen name="danmu_padding_left">4dp</dimen>
+    <dimen name="danmu_padding_right">8dp</dimen>
+    <dimen name="danmu_padding_vertical">4dp</dimen>
+    <dimen name="danmu_height">32dp</dimen>
+    <dimen name="danmu_text_size">11sp</dimen>
 </resources> 

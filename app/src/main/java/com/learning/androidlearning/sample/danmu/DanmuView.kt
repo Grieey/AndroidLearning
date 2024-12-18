@@ -27,9 +27,11 @@ class DanmuView @JvmOverloads constructor(
 
     private var animator: ValueAnimator? = null
     private val scrollSpeed = 2f // 像素/毫秒
-    private val danmuHeight = 100f
-    private val avatarSize = 80f
-    private val padding = 10f
+    private val danmuHeight = context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
+    private val avatarSize = danmuHeight - 2 * context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
+    private val paddingLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
+    private val paddingRight = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_right).toFloat()
+    private val paddingVertical = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
     private var onDanmuCompleteListener: ((DanmuItem) -> Unit)? = null
 
     private val allDanmuList = mutableListOf<DanmuItem>() // 存储所有弹幕
@@ -38,9 +40,12 @@ class DanmuView @JvmOverloads constructor(
 
     private val safeDistance = context.resources.getDimensionPixelSize(R.dimen.danmu_safe_distance).toFloat()
 
+    private val textSize = context.resources.getDimensionPixelSize(R.dimen.danmu_text_size).toFloat()
+    private val contentTextColor = Color.parseColor("#333333")
+
     init {
         paint.style = Paint.Style.FILL
-        textPaint.textSize = 40f
+        textPaint.textSize = textSize
         startScrollAnimation()
     }
 
@@ -80,13 +85,13 @@ class DanmuView @JvmOverloads constructor(
     fun addDanmu(danmu: DanmuItem) {
         val rowIndex = findBestRow()
         if (rowIndex < 0) {
-            // 如果没有安全的行，暂时不添加这个弹幕
             return
         }
 
-        val y = rowIndex * (danmuHeight + padding) + padding + danmuHeight
+        val y = rowIndex * (danmuHeight + paddingVertical) + paddingVertical + danmuHeight
         val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
-        val totalWidth = avatarSize + padding + textWidth + (danmu.image?.let { avatarSize } ?: 0f)
+        val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth + 
+                        (danmu.image?.let { avatarSize + paddingLeft } ?: 0f) + paddingRight
 
         val holder = DanmuViewHolder(
             danmuItem = danmu,
@@ -183,28 +188,29 @@ class DanmuView @JvmOverloads constructor(
         // 绘制背景
         paint.style = Paint.Style.FILL
         paint.shader = DanmuConfig.createGradientShader(holder.width, holder.height)
-        canvas.drawRoundRect(holder.rect, DanmuConfig.CORNER_RADIUS, DanmuConfig.CORNER_RADIUS, paint)
+        val cornerRadius = holder.height / 2
+        canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
         // 绘制边框
         paint.shader = null
         paint.style = Paint.Style.STROKE
         paint.color = Color.parseColor(DanmuConfig.BORDER_COLOR)
-        canvas.drawRoundRect(holder.rect, DanmuConfig.CORNER_RADIUS, DanmuConfig.CORNER_RADIUS, paint)
+        canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
         // 绘制头像
         holder.avatarBitmap?.let { avatar ->
             val avatarRect = RectF(
-                holder.x + padding,
-                holder.y - holder.height + padding,
-                holder.x + padding + avatarSize,
-                holder.y - padding
+                holder.x + paddingLeft,
+                holder.y - holder.height + paddingVertical,
+                holder.x + paddingLeft + avatarSize,
+                holder.y - paddingVertical
             )
             canvas.drawBitmap(avatar, null, avatarRect, paint)
         }
 
         // 绘制文本
-        val textX = holder.x + avatarSize + padding * 2
-        val textY = holder.y - holder.height / 2 + textPaint.textSize / 2
+        val textX = holder.x + paddingLeft + avatarSize + paddingLeft
+        val textY = holder.y - holder.height/2 + textPaint.textSize/3
 
         // 绘制用户名
         textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
@@ -213,17 +219,17 @@ class DanmuView @JvmOverloads constructor(
 
         // 绘制内容
         val usernameWidth = textPaint.measureText(holder.danmuItem.username)
-        textPaint.color = Color.BLACK
+        textPaint.color = contentTextColor
         textPaint.isFakeBoldText = false
-        canvas.drawText(holder.danmuItem.content, textX + usernameWidth + padding, textY, textPaint)
+        canvas.drawText(holder.danmuItem.content, textX + usernameWidth + paddingLeft, textY, textPaint)
 
         // 绘制图片（如果有）
         holder.imageBitmap?.let { image ->
             val imageRect = RectF(
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + padding * 2,
-                holder.y - holder.height + padding,
-                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + padding * 2 + avatarSize,
-                holder.y - padding
+                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + paddingLeft,
+                holder.y - holder.height + paddingVertical,
+                textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + paddingLeft + avatarSize,
+                holder.y - paddingVertical
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }
