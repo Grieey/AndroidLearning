@@ -126,7 +126,6 @@ class DanmuDemoActivity : AppCompatActivity() {
             username = "维护人员",
             content = "定期维护中..."
         ),
-        // 添加更多测试数据
         DanmuItem(
             avatar = "https://pic.616pic.com/ys_img/00/05/33/i5SqXdDM9Q.jpg",
             username = "数据分析师",

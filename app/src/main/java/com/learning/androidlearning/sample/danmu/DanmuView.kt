@@ -43,6 +43,9 @@ class DanmuView @JvmOverloads constructor(
     private val textSize = context.resources.getDimensionPixelSize(R.dimen.danmu_text_size).toFloat()
     private val contentTextColor = Color.parseColor("#333333")
 
+    // 添加可视区域矩形
+    private val visibleRect = RectF()
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -70,7 +73,8 @@ class DanmuView @JvmOverloads constructor(
                 val holder = iterator.next()
                 holder.updatePosition(-scrollSpeed)
                 
-                if (holder.isOutOfScreen()) {
+                // 当弹幕完全离开可视区域时移除
+                if (holder.x + holder.width < 0) {
                     iterator.remove()
                     onDanmuCompleteListener?.invoke(holder.danmuItem)
                 }
@@ -93,9 +97,10 @@ class DanmuView @JvmOverloads constructor(
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth + 
                         (danmu.image?.let { avatarSize + paddingLeft } ?: 0f) + paddingRight
 
+        // 确保新弹幕从屏幕右边开始
         val holder = DanmuViewHolder(
             danmuItem = danmu,
-            x = width.toFloat(),
+            x = visibleRect.right,
             y = y,
             width = totalWidth,
             height = danmuHeight
@@ -116,9 +121,16 @@ class DanmuView @JvmOverloads constructor(
             }
             
             val lastDanmu = row.last()
-            // 只需要确保与最后一个弹幕的间距是12dp
-            if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
-                return i
+            // 只检查最后一个可见弹幕
+            if (isVisible(lastDanmu)) {
+                if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
+                    return i
+                }
+            } else {
+                // 如果最后一个弹幕不可见，检查是否有足够空间
+                if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
+                    return i
+                }
             }
         }
         return -1
@@ -136,6 +148,7 @@ class DanmuView @JvmOverloads constructor(
     private fun loadAvatar(url: String, holder: DanmuViewHolder) {
         if (avatarCache.containsKey(url)) {
             holder.avatarBitmap = avatarCache[url]
+            invalidate()
             return
         }
 
@@ -143,7 +156,11 @@ class DanmuView @JvmOverloads constructor(
             .data(url)
             .transformations(CircleCropTransformation())
             .target { drawable ->
-                val bitmap = drawable.toBitmap()
+                val bitmap = drawable.toBitmap(
+                    width = avatarSize.toInt(),
+                    height = avatarSize.toInt(),
+                    config = Bitmap.Config.ARGB_8888
+                )
                 avatarCache[url] = bitmap
                 holder.avatarBitmap = bitmap
                 invalidate()
@@ -157,13 +174,18 @@ class DanmuView @JvmOverloads constructor(
     private fun loadImage(url: String, holder: DanmuViewHolder) {
         if (imageCache.containsKey(url)) {
             holder.imageBitmap = imageCache[url]
+            invalidate()
             return
         }
 
         val request = ImageRequest.Builder(context)
             .data(url)
             .target { drawable ->
-                val bitmap = drawable.toBitmap()
+                val bitmap = drawable.toBitmap(
+                    width = avatarSize.toInt(),
+                    height = avatarSize.toInt(),
+                    config = Bitmap.Config.ARGB_8888
+                )
                 imageCache[url] = bitmap
                 holder.imageBitmap = bitmap
                 invalidate()
@@ -179,7 +201,10 @@ class DanmuView @JvmOverloads constructor(
 
         danmuRows.forEach { row ->
             row.forEach { holder ->
-                drawDanmu(canvas, holder)
+                // 检查弹幕是否在可视区域内
+                if (isVisible(holder)) {
+                    drawDanmu(canvas, holder)
+                }
             }
         }
     }
@@ -196,6 +221,10 @@ class DanmuView @JvmOverloads constructor(
         paint.style = Paint.Style.STROKE
         paint.color = Color.parseColor(DanmuConfig.BORDER_COLOR)
         canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
+
+        // 重置画笔样式为填充，以便正确绘制头像
+        paint.style = Paint.Style.FILL
+        paint.color = Color.WHITE // 重置颜色
 
         // 绘制头像
         holder.avatarBitmap?.let { avatar ->
@@ -292,5 +321,23 @@ class DanmuView @JvmOverloads constructor(
 
     private fun calculateNextDelay(): Long {
         return 300L // 使用固定的延迟时间，确保弹幕间距更均匀
+    }
+
+    // 添加新方法：检查弹幕是否在可视区域内
+    private fun isVisible(holder: DanmuViewHolder): Boolean {
+        // 创建弹幕的包围盒
+        val danmuRect = RectF(
+            holder.x,
+            holder.y - holder.height,
+            holder.x + holder.width,
+            holder.y
+        )
+        // 检查是否与可视区域相交
+        return RectF.intersects(visibleRect, danmuRect)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        visibleRect.set(0f, 0f, w.toFloat(), h.toFloat())
     }
 } 
