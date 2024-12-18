@@ -65,4 +65,8 @@ dependencies {
 
     // 添加 Coil 依赖
     implementation("io.coil-kt:coil:2.5.0")
+
+    // 使用 Glide 4.11.0 版本
+    implementation("com.github.bumptech.glide:glide:4.11.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.11.0")
 }

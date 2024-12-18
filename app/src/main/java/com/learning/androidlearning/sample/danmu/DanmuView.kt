@@ -3,13 +3,13 @@ package com.learning.androidlearning.sample.danmu
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
-import androidx.core.graphics.drawable.toBitmap
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.transform.CircleCropTransformation
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.learning.androidlearning.R
 
 class DanmuView @JvmOverloads constructor(
@@ -23,7 +23,6 @@ class DanmuView @JvmOverloads constructor(
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val avatarCache = mutableMapOf<String, Bitmap>()
     private val imageCache = mutableMapOf<String, Bitmap>()
-    private val imageLoader = ImageLoader(context)
 
     private var animator: ValueAnimator? = null
     private val scrollSpeed = 4f // 像素/毫秒
@@ -74,10 +73,10 @@ class DanmuView @JvmOverloads constructor(
 
     private fun updateDanmuPositions() {
         var needsRedraw = false
-        
+
         for (row in danmuRows.indices) {
             val currentRow = danmuRows[row]
-            
+
             // 移除已经离开屏幕的弹幕
             currentRow.removeAll { holder ->
                 val shouldRemove = holder.isOutOfScreen()
@@ -86,15 +85,15 @@ class DanmuView @JvmOverloads constructor(
                 }
                 shouldRemove
             }
-            
+
             // 更新剩余弹幕的位置
             for (i in currentRow.indices) {
                 val holder = currentRow[i]
                 val prevHolder = if (i > 0) currentRow[i - 1] else null
-                
+
                 // 更新位置
                 holder.updatePosition(-scrollSpeed)
-                
+
                 // 如果有前一个弹幕，检查间距
                 prevHolder?.let { prev ->
                     val currentDistance = holder.x - (prev.x + prev.width)
@@ -104,11 +103,11 @@ class DanmuView @JvmOverloads constructor(
                         holder.updateRect()
                     }
                 }
-                
+
                 needsRedraw = true
             }
         }
-        
+
         if (needsRedraw) {
             invalidate()
         }
@@ -126,8 +125,8 @@ class DanmuView @JvmOverloads constructor(
 
         val y = rowIndex * (danmuHeight + paddingVertical) + paddingVertical + danmuHeight
         val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
-        val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth + 
-                        (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
+        val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
+                (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
         // 计算新弹幕的起始 x 坐标
         var startX = width.toFloat() // 默认从屏幕右边开始
@@ -160,11 +159,11 @@ class DanmuView @JvmOverloads constructor(
             if (row.isEmpty()) {
                 return i
             }
-            
+
             val lastDanmu = row.last()
             // 计算最后一个弹幕的右边界到屏幕右边界的距离
             val distanceToRight = width - (lastDanmu.x + lastDanmu.width)
-            
+
             // 如果距离大于安全距离，则可以添加新弹幕
             if (distanceToRight >= safeDistance) {
                 return i
@@ -189,23 +188,49 @@ class DanmuView @JvmOverloads constructor(
             return
         }
 
-        val request = ImageRequest.Builder(context)
-            .data(url)
-            .transformations(CircleCropTransformation())
-            .target { drawable ->
-                val bitmap = drawable.toBitmap(
-                    width = avatarSize.toInt(),
-                    height = avatarSize.toInt(),
-                    config = Bitmap.Config.ARGB_8888
-                )
-                avatarCache[url] = bitmap
-                holder.avatarBitmap = bitmap
-                invalidate()
-            }
-            .error(R.drawable.default_avatar)
-            .fallback(R.drawable.default_avatar)
-            .build()
-        imageLoader.enqueue(request)
+        Glide.with(context)
+            .asBitmap()
+            .load(url)
+            .override(avatarSize.toInt(), avatarSize.toInt())
+            .circleCrop() // Glide 4.11.0 的圆形裁剪
+            .into(object : CustomTarget<Bitmap>(avatarSize.toInt(), avatarSize.toInt()) {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    // 创建一个新的 Bitmap，确保填充整个区域
+                    val targetSize = avatarSize.toInt()
+                    val scale = maxOf(
+                        targetSize.toFloat() / resource.width,
+                        targetSize.toFloat() / resource.height
+                    )
+                    val scaledWidth = (resource.width * scale).toInt()
+                    val scaledHeight = (resource.height * scale).toInt()
+                    
+                    val scaledBitmap = Bitmap.createScaledBitmap(
+                        resource,
+                        scaledWidth,
+                        scaledHeight,
+                        true
+                    )
+                    
+                    // 居中裁剪
+                    val x = (scaledWidth - targetSize) / 2
+                    val y = (scaledHeight - targetSize) / 2
+                    val finalBitmap = Bitmap.createBitmap(
+                        scaledBitmap,
+                        maxOf(0, x),
+                        maxOf(0, y),
+                        targetSize,
+                        targetSize
+                    )
+                    
+                    avatarCache[url] = finalBitmap
+                    holder.avatarBitmap = finalBitmap
+                    invalidate()
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // 处理加载被清除的情况
+                }
+            })
     }
 
     private fun loadImage(url: String, holder: DanmuViewHolder) {
@@ -213,36 +238,48 @@ class DanmuView @JvmOverloads constructor(
         if (url == "ic_red_packet") {
             val resourceId = context.resources.getIdentifier(url, "drawable", context.packageName)
             if (resourceId != 0) {
-                val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
-                holder.imageBitmap = bitmap
-                invalidate()
+                Glide.with(context)
+                    .asBitmap()
+                    .load(resourceId)
+                    .override(imageSize.toInt(), imageSize.toInt())
+                    .into(object : CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            holder.imageBitmap = resource
+                            invalidate()
+                        }
+
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                            // 处理加载被清除的情况
+                        }
+                    })
             }
             return
         }
 
-        // 其他远程图片的加载逻辑保持不变
+        // 其他远程图片的加载逻辑
         if (imageCache.containsKey(url)) {
             holder.imageBitmap = imageCache[url]
             invalidate()
             return
         }
 
-        val request = ImageRequest.Builder(context)
-            .data(url)
-            .target { drawable ->
-                val bitmap = drawable.toBitmap(
-                    width = imageSize.toInt(),
-                    height = imageSize.toInt(),
-                    config = Bitmap.Config.ARGB_8888
-                )
-                imageCache[url] = bitmap
-                holder.imageBitmap = bitmap
-                invalidate()
-            }
+        Glide.with(context)
+            .asBitmap()
+            .load(url)
+            .override(imageSize.toInt(), imageSize.toInt())
             .error(R.drawable.default_image)
             .fallback(R.drawable.default_image)
-            .build()
-        imageLoader.enqueue(request)
+            .into(object : CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
+                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    imageCache[url] = resource
+                    holder.imageBitmap = resource
+                    invalidate()
+                }
+
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    // 处理加载被清除的情况
+                }
+            })
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -283,12 +320,31 @@ class DanmuView @JvmOverloads constructor(
                 holder.x + paddingLeft + avatarSize,
                 holder.y - paddingVertical
             )
+
+            // 保存画布状态
+            canvas.save()
+
+            // 创建圆形裁剪区域
+            val path = Path().apply {
+                addCircle(
+                    avatarRect.centerX(),
+                    avatarRect.centerY(),
+                    avatarSize / 2,
+                    Path.Direction.CW
+                )
+            }
+            canvas.clipPath(path)
+
+            // 绘制头像
             canvas.drawBitmap(avatar, null, avatarRect, paint)
+
+            // 恢复画布状态
+            canvas.restore()
         }
 
         // 绘制文本
         val textX = holder.x + paddingLeft + avatarSize + paddingLeft
-        val textY = holder.y - holder.height/2 + textPaint.textSize/3
+        val textY = holder.y - holder.height / 2 + textPaint.textSize / 3
 
         // 绘制用户名
         textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
@@ -305,9 +361,9 @@ class DanmuView @JvmOverloads constructor(
         holder.imageBitmap?.let { image ->
             val imageRect = RectF(
                 textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft,
-                holder.y - holder.height/2 - imageSize/2, // 垂直居中
+                holder.y - holder.height / 2 - imageSize / 2, // 垂直居中
                 textX + usernameWidth + textPaint.measureText(holder.danmuItem.content) + imageMarginLeft + imageSize,
-                holder.y - holder.height/2 + imageSize/2  // 垂直居中
+                holder.y - holder.height / 2 + imageSize / 2  // 垂直居中
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }
