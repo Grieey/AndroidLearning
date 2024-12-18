@@ -138,7 +138,7 @@ class DanmuView @JvmOverloads constructor(
             return
         }
 
-        val y = (rowIndex + 1) * (danmuHeight + rowSpacing)
+        val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
         
         // 根据样式计算宽度，但保持相同的高度
         val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
@@ -498,7 +498,39 @@ class DanmuView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // 基础可视区域仍然是实际视图大小
         visibleRect.set(0f, 0f, w.toFloat(), h.toFloat())
+        
+        // 重新计算所有弹幕的位置
+        danmuRows.forEachIndexed { rowIndex, row ->
+            row.forEach { holder ->
+                val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
+                holder.y = y
+                holder.updateRect()
+            }
+        }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+        val width = when (widthMode) {
+            MeasureSpec.EXACTLY -> widthSize
+            MeasureSpec.AT_MOST -> widthSize
+            else -> suggestedMinimumWidth
+        }
+
+        // 计算所需的高度：行数 * (弹幕高度 + 行间距) + 顶部和底部的行间距
+        val desiredHeight = DanmuConfig.MAX_LINES * (danmuHeight + rowSpacing) + rowSpacing
+
+        val height = when (heightMode) {
+            MeasureSpec.EXACTLY -> heightSize
+            MeasureSpec.AT_MOST -> desiredHeight.toInt().coerceAtMost(heightSize)
+            else -> desiredHeight.toInt()
+        }
+
+        setMeasuredDimension(width, height)
     }
 } 

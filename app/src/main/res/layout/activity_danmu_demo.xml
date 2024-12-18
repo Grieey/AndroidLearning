@@ -10,16 +10,14 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:text="重播"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.learning.androidlearning.sample.danmu.DanmuView
         android:id="@+id/danmuView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="64dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/inputLayout"
+        android:layout_height="wrap_content"
+        android:background="@color/design_default_color_secondary"
         app:layout_constraintTop_toBottomOf="@id/replayButton" />
 
     <com.google.android.material.textfield.TextInputLayout
