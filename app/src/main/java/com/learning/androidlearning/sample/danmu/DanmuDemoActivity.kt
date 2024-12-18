@@ -17,6 +17,8 @@ class DanmuDemoActivity : AppCompatActivity() {
     private lateinit var danmuInput: TextInputEditText
     private lateinit var sendButton: Button
     private lateinit var replayButton: Button
+    private lateinit var pauseResumeButton: Button
+    private var isPaused = false
 
     private fun decodeBase64Url(base64Url: String): String {
         return try {
@@ -63,6 +65,7 @@ class DanmuDemoActivity : AppCompatActivity() {
         danmuInput = findViewById(R.id.danmuInput)
         sendButton = findViewById(R.id.sendButton)
         replayButton = findViewById(R.id.replayButton)
+        pauseResumeButton = findViewById(R.id.pauseResumeButton)
 
         // 设置测试数据
         danmuView.setDanmuList(testDanmuList)
@@ -86,6 +89,20 @@ class DanmuDemoActivity : AppCompatActivity() {
         // 重播按钮点击事件
         replayButton.setOnClickListener {
             danmuView.replay()
+            isPaused = false
+            pauseResumeButton.text = "暂停"
+        }
+
+        // 暂停/恢复按钮点击事件
+        pauseResumeButton.setOnClickListener {
+            if (isPaused) {
+                danmuView.resume()
+                pauseResumeButton.text = "暂停"
+            } else {
+                danmuView.pause()
+                pauseResumeButton.text = "继续"
+            }
+            isPaused = !isPaused
         }
 
         // 弹幕完成回调

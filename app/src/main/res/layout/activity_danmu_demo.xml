@@ -13,6 +13,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/pauseResumeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="暂停"
+        app:layout_constraintEnd_toStartOf="@id/replayButton"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.learning.androidlearning.sample.danmu.DanmuView
         android:id="@+id/danmuView"
         android:layout_width="match_parent"

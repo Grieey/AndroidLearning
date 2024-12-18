@@ -56,6 +56,9 @@ class DanmuView @JvmOverloads constructor(
     private val rowSpacing = context.resources.getDimensionPixelSize(R.dimen.danmu_row_spacing).toFloat()
 
     private var isAnimating = false
+    private var isPaused = false
+    private var pausedTime = 0L
+    private var accumulatedTime = 0L
 
     init {
         paint.style = Paint.Style.FILL
@@ -67,6 +70,7 @@ class DanmuView @JvmOverloads constructor(
         if (isAnimating) return
         isAnimating = true
         lastFrameTime = System.nanoTime()
+        accumulatedTime = 0
         
         animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -74,13 +78,17 @@ class DanmuView @JvmOverloads constructor(
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                val currentTime = System.nanoTime()
-                val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f // 转换为秒
-                lastFrameTime = currentTime
-                
-                // 计算这一帧应该移动的距离
-                val distance = scrollSpeed * deltaTime
-                updateDanmuPositions(distance)
+                if (!isPaused) {
+                    val currentTime = System.nanoTime()
+                    val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
+                    lastFrameTime = currentTime
+                    
+                    // 累积时间，用于计算总位移
+                    accumulatedTime += (deltaTime * 1_000_000_000).toLong()
+                    
+                    val distance = scrollSpeed * deltaTime
+                    updateDanmuPositions(distance)
+                }
             }
             start()
         }
@@ -404,6 +412,9 @@ class DanmuView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         isAnimating = false
+        isPaused = false
+        pausedTime = 0
+        accumulatedTime = 0
         animator?.cancel()
         animator = null
     }
@@ -419,6 +430,10 @@ class DanmuView @JvmOverloads constructor(
 
     // 添加新方法：重新播放
     fun replay() {
+        isPaused = false
+        pausedTime = 0
+        accumulatedTime = 0
+        lastFrameTime = System.nanoTime()
         currentIndex = 0
         clearCurrentDanmu()
         startDisplayingDanmu()
@@ -551,5 +566,30 @@ class DanmuView @JvmOverloads constructor(
         }
 
         setMeasuredDimension(width, height)
+    }
+
+    // 修改暂停方法
+    fun pause() {
+        if (!isPaused) {
+            isPaused = true
+            pausedTime = System.nanoTime()
+            animator?.pause()
+        }
+    }
+
+    // 修改恢复方法
+    fun resume() {
+        if (isPaused) {
+            val currentTime = System.nanoTime()
+            // 计算暂停的时间差，并将其加到 lastFrameTime 上
+            val pauseDuration = currentTime - pausedTime
+            lastFrameTime += pauseDuration
+            
+            isPaused = false
+            animator?.resume()
+            if (animator == null) {
+                startScrollAnimation()
+            }
+        }
     }
 } 
