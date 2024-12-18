@@ -32,6 +32,12 @@ class DanmuView @JvmOverloads constructor(
     private val padding = 10f
     private var onDanmuCompleteListener: ((DanmuItem) -> Unit)? = null
 
+    private val allDanmuList = mutableListOf<DanmuItem>() // 存储所有弹幕
+    private var currentIndex = 0 // 当前播放到的弹幕索引
+    private val columnWidth = 300f // 每列的宽度
+
+    private val safeDistance = context.resources.getDimensionPixelSize(R.dimen.danmu_safe_distance).toFloat()
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = 40f
@@ -73,8 +79,12 @@ class DanmuView @JvmOverloads constructor(
 
     fun addDanmu(danmu: DanmuItem) {
         val rowIndex = findBestRow()
-        val y = rowIndex * (danmuHeight + padding) + padding + danmuHeight
+        if (rowIndex < 0) {
+            // 如果没有安全的行，暂时不添加这个弹幕
+            return
+        }
 
+        val y = rowIndex * (danmuHeight + padding) + padding + danmuHeight
         val textWidth = textPaint.measureText(danmu.username + "  " + danmu.content)
         val totalWidth = avatarSize + padding + textWidth + (danmu.image?.let { avatarSize } ?: 0f)
 
@@ -94,19 +104,28 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun findBestRow(): Int {
-        var bestRow = 0
-        var maxSpace = Float.NEGATIVE_INFINITY
-
-        danmuRows.forEachIndexed { index, row ->
-            val lastDanmuEnd = row.lastOrNull()?.let { it.x + it.width } ?: 0f
-            val space = width - lastDanmuEnd
-            if (space > maxSpace) {
-                maxSpace = space
-                bestRow = index
+        for (i in 0 until DanmuConfig.MAX_LINES) {
+            val row = danmuRows[i]
+            if (row.isEmpty()) {
+                return i
+            }
+            
+            val lastDanmu = row.last()
+            // 只需要确保与最后一个弹幕的间距是12dp
+            if (lastDanmu.x + lastDanmu.width + safeDistance < width) {
+                return i
             }
         }
+        return -1
+    }
 
-        return bestRow
+    private fun isRowSafe(rowIndex: Int): Boolean {
+        val row = danmuRows[rowIndex]
+        if (row.isEmpty()) return true
+
+        val lastDanmu = row.last()
+        // 只检查与最后一个弹幕的间距
+        return lastDanmu.x + lastDanmu.width + safeDistance < width
     }
 
     private fun loadAvatar(url: String, holder: DanmuViewHolder) {
@@ -214,5 +233,58 @@ class DanmuView @JvmOverloads constructor(
         super.onDetachedFromWindow()
         animator?.cancel()
         animator = null
+    }
+
+    // 添加新方法：设置弹幕列表
+    fun setDanmuList(danmuList: List<DanmuItem>) {
+        allDanmuList.clear()
+        allDanmuList.addAll(danmuList)
+        currentIndex = 0
+        clearCurrentDanmu()
+        startDisplayingDanmu()
+    }
+
+    // 添加新方法：重新播放
+    fun replay() {
+        currentIndex = 0
+        clearCurrentDanmu()
+        startDisplayingDanmu()
+    }
+
+    private fun clearCurrentDanmu() {
+        danmuRows.forEach { it.clear() }
+        invalidate()
+    }
+
+    private fun startDisplayingDanmu() {
+        postDelayed(object : Runnable {
+            override fun run() {
+                if (currentIndex < allDanmuList.size) {
+                    addNextColumnDanmu()
+                    // 根据弹幕密度动态调整延迟时间
+                    val delay = calculateNextDelay()
+                    postDelayed(this, delay)
+                }
+            }
+        }, calculateNextDelay())
+    }
+
+    private fun addNextColumnDanmu() {
+        var addedCount = 0
+        while (addedCount < 3 && currentIndex < allDanmuList.size) {
+            val rowIndex = findBestRow()
+            if (rowIndex >= 0) {
+                addDanmu(allDanmuList[currentIndex])
+                currentIndex++
+                addedCount++
+            } else {
+                // 如果当前没有合适的行，等待下一次尝试
+                break
+            }
+        }
+    }
+
+    private fun calculateNextDelay(): Long {
+        return 300L // 使用固定的延迟时间，确保弹幕间距更均匀
     }
 } 
