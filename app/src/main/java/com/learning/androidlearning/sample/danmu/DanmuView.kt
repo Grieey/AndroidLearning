@@ -25,7 +25,8 @@ class DanmuView @JvmOverloads constructor(
     private val imageCache = mutableMapOf<String, Bitmap>()
 
     private var animator: ValueAnimator? = null
-    private val scrollSpeed = 4f // 像素/毫秒
+    private var lastFrameTime = 0L
+    private val scrollSpeed = 200f // 每秒移动的像素数
     private val danmuHeight = context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
     private val avatarSize = danmuHeight - 2 * context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
     private val paddingLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
@@ -54,6 +55,8 @@ class DanmuView @JvmOverloads constructor(
     // 添加行间距属性
     private val rowSpacing = context.resources.getDimensionPixelSize(R.dimen.danmu_row_spacing).toFloat()
 
+    private var isAnimating = false
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -61,41 +64,50 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun startScrollAnimation() {
+        if (isAnimating) return
+        isAnimating = true
+        lastFrameTime = System.nanoTime()
+        
         animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 16 // 16ms per frame for 60fps
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                updateDanmuPositions()
-                invalidate()
+                val currentTime = System.nanoTime()
+                val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f // 转换为秒
+                lastFrameTime = currentTime
+                
+                // 计算这一帧应该移动的距离
+                val distance = scrollSpeed * deltaTime
+                updateDanmuPositions(distance)
             }
             start()
         }
     }
 
-    private fun updateDanmuPositions() {
+    private fun updateDanmuPositions(distance: Float) {
         var needsRedraw = false
 
         for (row in danmuRows.indices) {
             val currentRow = danmuRows[row]
 
-            // 移除已经离开屏幕的弹幕
+            // 移除已经完全离开扩展可视区域的弹幕
             currentRow.removeAll { holder ->
-                val shouldRemove = holder.isOutOfScreen()
+                val shouldRemove = holder.x + holder.width < -width
                 if (shouldRemove) {
                     onDanmuCompleteListener?.invoke(holder.danmuItem)
                 }
                 shouldRemove
             }
 
-            // 更新剩余弹幕的位置
+            // 更新剩余弹幕的位置，使用计算出的距离
             for (i in currentRow.indices) {
                 val holder = currentRow[i]
                 val prevHolder = if (i > 0) currentRow[i - 1] else null
 
-                // 更新位置
-                holder.updatePosition(-scrollSpeed)
+                // 更新位置，使用实际的时间间隔计算移动距离
+                holder.updatePosition(-distance)
 
                 // 如果有前一个弹幕，检查间距
                 prevHolder?.let { prev ->
@@ -174,8 +186,8 @@ class DanmuView @JvmOverloads constructor(
             }
 
             val lastDanmu = row.last()
-            // 计算最后一个弹幕的右边界到屏幕右边界的距离
-            val distanceToRight = width - (lastDanmu.x + lastDanmu.width)
+            // 计算最后一个弹幕的右边界到扩展区域右边界的距离
+            val distanceToRight = width * 2 - (lastDanmu.x + lastDanmu.width)
 
             // 如果距离大于安全距离，则可以添加新弹幕
             if (distanceToRight >= safeDistance) {
@@ -404,6 +416,7 @@ class DanmuView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        isAnimating = false
         animator?.cancel()
         animator = null
     }
@@ -463,6 +476,14 @@ class DanmuView @JvmOverloads constructor(
 
     // 添加新方法：检查弹幕是否在可视区域内
     private fun isVisible(holder: DanmuViewHolder): Boolean {
+        // 创建一个扩展的可视区域，向右扩展一个屏幕宽度
+        val extendedVisibleRect = RectF(
+            visibleRect.left,
+            visibleRect.top,
+            visibleRect.right + width, // 向右扩展一个屏幕宽度
+            visibleRect.bottom
+        )
+        
         // 创建弹幕的包围盒
         val danmuRect = RectF(
             holder.x,
@@ -470,12 +491,14 @@ class DanmuView @JvmOverloads constructor(
             holder.x + holder.width,
             holder.y
         )
-        // 检查是否与可视区域相交
-        return RectF.intersects(visibleRect, danmuRect)
+        
+        // 检查是否与扩展的可视区域相交
+        return RectF.intersects(extendedVisibleRect, danmuRect)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        // 基础可视区域仍然是实际视图大小
         visibleRect.set(0f, 0f, w.toFloat(), h.toFloat())
     }
 } 
