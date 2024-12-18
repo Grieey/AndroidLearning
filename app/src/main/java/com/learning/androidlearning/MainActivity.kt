@@ -13,6 +13,7 @@ import com.learning.androidlearning.sample.profile.SampleProfileActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
 import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
+import com.learning.androidlearning.sample.danmu.DanmuDemoActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 import com.learning.androidlearning.sample.database.SampleDatabaseActivity
 import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
@@ -108,6 +109,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToTimeTable = findViewById<Button>(R.id.buttonToTimeTableActivity)
         buttonToTimeTable.setOnClickListener {
             val intent = Intent(this, ScheduleActivityWithJava::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to DanmuDemoActivity
+        val buttonToDanmu = findViewById<Button>(R.id.buttonToDanmuActivity)
+        buttonToDanmu.setOnClickListener {
+            val intent = Intent(this, DanmuDemoActivity::class.java)
             startActivity(intent)
         }
     }

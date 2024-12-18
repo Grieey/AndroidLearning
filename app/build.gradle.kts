@@ -62,4 +62,7 @@ dependencies {
 
     // DanmakuFlameMaster
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
+
+    // 添加 Coil 依赖
+    implementation("io.coil-kt:coil:2.5.0")
 }
