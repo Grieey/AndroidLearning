@@ -8,9 +8,9 @@ import kotlin.math.sin
 
 object DanmuConfig {
     const val MAX_LINES = 3
-    const val BORDER_COLOR = "#FFBABA"
-    const val GRADIENT_START_COLOR = "#FFF0D7"
-    const val GRADIENT_END_COLOR = "#FFC4C4"
+    const val BORDER_COLOR = "#FF527C"
+    const val GRADIENT_START_COLOR = "#FFCCCC"
+    const val GRADIENT_END_COLOR = "#FFB5B5"
     const val GRADIENT_START_COLOR_NO_BORDER = "#99FFD7D7"
     const val GRADIENT_END_COLOR_NO_BORDER = "#99FFC4C4"
     const val USERNAME_COLOR = "#E95905"
