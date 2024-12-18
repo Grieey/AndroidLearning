@@ -25,13 +25,6 @@ data class DanmuViewHolder(
     }
 
     /**
-     * 检查弹幕是否已经完全离开屏幕
-     */
-    fun isOutOfScreen(): Boolean {
-        return x + width < 0
-    }
-
-    /**
      * 更新弹幕的位置
      */
     fun updatePosition(dx: Float) {

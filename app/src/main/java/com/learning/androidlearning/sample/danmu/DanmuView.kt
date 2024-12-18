@@ -2,7 +2,12 @@ package com.learning.androidlearning.sample.danmu
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
@@ -31,12 +36,10 @@ class DanmuView @JvmOverloads constructor(
     private val avatarSize = danmuHeight - 2 * context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
     private val paddingLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
     private val paddingRight = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_right).toFloat()
-    private val paddingVertical = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
     private var onDanmuCompleteListener: ((DanmuItem) -> Unit)? = null
 
     private val allDanmuList = mutableListOf<DanmuItem>() // 存储所有弹幕
     private var currentIndex = 0 // 当前播放到的弹幕索引
-    private val columnWidth = 300f // 每列的宽度
 
     private val safeDistance = context.resources.getDimensionPixelSize(R.dimen.danmu_safe_distance).toFloat()
 
@@ -71,7 +74,7 @@ class DanmuView @JvmOverloads constructor(
         isAnimating = true
         lastFrameTime = System.nanoTime()
         accumulatedTime = 0
-        
+
         animator?.cancel()
         animator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 16 // 16ms per frame for 60fps
@@ -82,10 +85,10 @@ class DanmuView @JvmOverloads constructor(
                     val currentTime = System.nanoTime()
                     val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
                     lastFrameTime = currentTime
-                    
+
                     // 累积时间，用于计算总位移
                     accumulatedTime += (deltaTime * 1_000_000_000).toLong()
-                    
+
                     val distance = scrollSpeed * deltaTime
                     updateDanmuPositions(distance)
                 }
@@ -143,22 +146,22 @@ class DanmuView @JvmOverloads constructor(
     fun addDanmu(danmu: DanmuItem) {
         // 找到当前最少弹幕的行
         val rowIndex = (0 until DanmuConfig.MAX_LINES).minByOrNull { danmuRows[it].size } ?: 0
-        
+
         val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
-        
+
         // 计算宽度
         val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
             textPaint.measureText(danmu.username + "  " + danmu.content)
         } else {
             textPaint.measureText(danmu.content)
         }
-        
+
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                 (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
         // 计算 x 坐标（从屏幕右边开始）
         var startX = width.toFloat()
-        
+
         // 如果该行已经有弹幕，确保新弹幕在最后一个弹幕后面
         val row = danmuRows[rowIndex]
         if (row.isNotEmpty()) {
@@ -179,26 +182,6 @@ class DanmuView @JvmOverloads constructor(
         loadAvatar(danmu.avatar, holder)
         danmu.image?.let { loadImage(it, holder) }
         invalidate()
-    }
-
-    private fun findBestRow(): Int {
-        // 由于我们现在是按列添加，这个方法不再需要查找最佳行
-        // 而是直接返回下一个可用的行号
-        for (i in 0 until DanmuConfig.MAX_LINES) {
-            if (danmuRows[i].isEmpty()) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    private fun isRowSafe(rowIndex: Int): Boolean {
-        val row = danmuRows[rowIndex]
-        if (row.isEmpty()) return true
-
-        val lastDanmu = row.last()
-        // 只检查与最后一个弹幕的间距
-        return lastDanmu.x + lastDanmu.width + safeDistance < width
     }
 
     private fun loadAvatar(url: String, holder: DanmuViewHolder) {
@@ -223,14 +206,14 @@ class DanmuView @JvmOverloads constructor(
                     )
                     val scaledWidth = (resource.width * scale).toInt()
                     val scaledHeight = (resource.height * scale).toInt()
-                    
+
                     val scaledBitmap = Bitmap.createScaledBitmap(
                         resource,
                         scaledWidth,
                         scaledHeight,
                         true
                     )
-                    
+
                     // 居中裁剪
                     val x = (scaledWidth - targetSize) / 2
                     val y = (scaledHeight - targetSize) / 2
@@ -241,7 +224,7 @@ class DanmuView @JvmOverloads constructor(
                         targetSize,
                         targetSize
                     )
-                    
+
                     avatarCache[url] = finalBitmap
                     holder.avatarBitmap = finalBitmap
                     invalidate()
@@ -319,8 +302,8 @@ class DanmuView @JvmOverloads constructor(
         // 绘制背景
         paint.style = Paint.Style.FILL
         paint.shader = DanmuConfig.createGradientShader(
-            holder.width, 
-            holder.height, 
+            holder.width,
+            holder.height,
             holder.danmuItem.style == DanmuItem.STYLE_1
         )
         val cornerRadius = holder.height / 2
@@ -370,14 +353,14 @@ class DanmuView @JvmOverloads constructor(
 
         // 绘制文本，确保在32dp高度内垂直居中
         val textX = holder.x + paddingLeft + avatarSize + paddingLeft
-        val textY = holder.y - holder.height/2 + textSize/3
+        val textY = holder.y - holder.height / 2 + textSize / 3
 
         if (holder.danmuItem.style == DanmuItem.STYLE_1) {
             // 样式1：绘制用户名
             textPaint.color = Color.parseColor(DanmuConfig.USERNAME_COLOR)
             textPaint.isFakeBoldText = true
             canvas.drawText(holder.danmuItem.username, textX, textY, textPaint)
-            
+
             // 绘制内容
             val usernameWidth = textPaint.measureText(holder.danmuItem.username)
             textPaint.color = contentTextColor
@@ -393,17 +376,17 @@ class DanmuView @JvmOverloads constructor(
         // 绘制图片，确保在32dp高度内垂直居中
         holder.imageBitmap?.let { image ->
             val contentWidth = if (holder.danmuItem.style == DanmuItem.STYLE_1) {
-                textPaint.measureText(holder.danmuItem.username) + paddingLeft + 
-                textPaint.measureText(holder.danmuItem.content)
+                textPaint.measureText(holder.danmuItem.username) + paddingLeft +
+                        textPaint.measureText(holder.danmuItem.content)
             } else {
                 textPaint.measureText(holder.danmuItem.content)
             }
-            
+
             val imageRect = RectF(
                 textX + contentWidth + imageMarginLeft,
-                holder.y - holder.height/2 - imageSize/2,
+                holder.y - holder.height / 2 - imageSize / 2,
                 textX + contentWidth + imageMarginLeft + imageSize,
-                holder.y - holder.height/2 + imageSize/2
+                holder.y - holder.height / 2 + imageSize / 2
             )
             canvas.drawBitmap(image, null, imageRect, paint)
         }
@@ -458,25 +441,25 @@ class DanmuView @JvmOverloads constructor(
     private fun addNextColumnDanmu() {
         // 计算当前列的 x 坐标
         val columnStartX = width.toFloat()
-        
+
         // 尝试在一列中添加最多3条弹幕
         var addedCount = 0
         while (addedCount < DanmuConfig.MAX_LINES && currentIndex < allDanmuList.size) {
             // 计算当前弹幕应该在的行号
             val rowIndex = addedCount
-            
+
             val danmu = allDanmuList[currentIndex]
-            
+
             // 计算 y 坐标
             val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
-            
+
             // 计算弹幕宽度
             val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
                 textPaint.measureText(danmu.username + "  " + danmu.content)
             } else {
                 textPaint.measureText(danmu.content)
             }
-            
+
             val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                     (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
@@ -492,15 +475,15 @@ class DanmuView @JvmOverloads constructor(
 
             // 添加到对应行
             danmuRows[rowIndex].add(holder)
-            
+
             // 加载图片
             loadAvatar(danmu.avatar, holder)
             danmu.image?.let { loadImage(it, holder) }
-            
+
             currentIndex++
             addedCount++
         }
-        
+
         invalidate()
     }
 
@@ -517,7 +500,7 @@ class DanmuView @JvmOverloads constructor(
             visibleRect.right + width, // 向右扩展一个屏幕宽度
             visibleRect.bottom
         )
-        
+
         // 创建弹幕的包围盒
         val danmuRect = RectF(
             holder.x,
@@ -525,7 +508,7 @@ class DanmuView @JvmOverloads constructor(
             holder.x + holder.width,
             holder.y
         )
-        
+
         // 检查是否与扩展的可视区域相交
         return RectF.intersects(extendedVisibleRect, danmuRect)
     }
@@ -533,7 +516,7 @@ class DanmuView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         visibleRect.set(0f, 0f, w.toFloat(), h.toFloat())
-        
+
         // 重新计算所有弹幕的位置
         danmuRows.forEachIndexed { rowIndex, row ->
             row.forEach { holder ->
@@ -584,7 +567,7 @@ class DanmuView @JvmOverloads constructor(
             // 计算暂停的时间差，并将其加到 lastFrameTime 上
             val pauseDuration = currentTime - pausedTime
             lastFrameTime += pauseDuration
-            
+
             isPaused = false
             animator?.resume()
             if (animator == null) {
