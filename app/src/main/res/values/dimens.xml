@@ -9,4 +9,5 @@
     <dimen name="danmu_image_size">24dp</dimen>
     <dimen name="danmu_image_margin_left">8dp</dimen>
     <dimen name="danmu_row_spacing">10dp</dimen>
+    <dimen name="dialog_margin_top">70dp</dimen>
 </resources> 

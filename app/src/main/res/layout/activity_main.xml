@@ -1,98 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="16dp"
+    android:clipToPadding="false"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/buttonToSampleActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Go to Sample Components"
-        app:layout_constraintBottom_toTopOf="@+id/buttonToLayoutActivity"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/buttonToLayoutActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Go to Sample Layout"
-        app:layout_constraintBottom_toTopOf="@+id/buttonToProfileActivity"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonToSampleActivity" />
+        <Button
+            android:id="@+id/buttonToSampleActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Go to Sample Components"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/buttonToProfileActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Go to Sample Profile"
-        app:layout_constraintBottom_toTopOf="@+id/buttonToViewPagerActivity"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonToLayoutActivity" />
+        <Button
+            android:id="@+id/buttonToLayoutActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Go to Sample Layout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToSampleActivity" />
 
-    <Button
-        android:id="@+id/buttonToViewPagerActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Go to ViewPager Sample"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonToProfileActivity" />
+        <Button
+            android:id="@+id/buttonToProfileActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Go to Sample Profile"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToLayoutActivity" />
 
-    <Button
-        android:id="@+id/buttonToCustomViewActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Custom View Sample"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToViewPagerActivity" />
+        <Button
+            android:id="@+id/buttonToViewPagerActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Go to ViewPager Sample"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToProfileActivity" />
 
-    <Button
-        android:id="@+id/buttonToDatabaseActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Database Sample"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToCustomViewActivity" />
+        <Button
+            android:id="@+id/buttonToCustomViewActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Custom View Sample"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToViewPagerActivity" />
 
-    <Button
-        android:id="@+id/buttonToScheduleActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Schedule Grid Sample"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToDatabaseActivity" />
+        <Button
+            android:id="@+id/buttonToDatabaseActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Database Sample"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToCustomViewActivity" />
 
-    <Button
-        android:id="@+id/buttonToTimeTableActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Schedule Sample"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToScheduleActivity" />
+        <Button
+            android:id="@+id/buttonToScheduleActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Schedule Grid Sample"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToDatabaseActivity" />
 
-    <Button
-        android:id="@+id/buttonToDanmuActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="弹幕示例"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonToTimeTableActivity" />
+        <Button
+            android:id="@+id/buttonToTimeTableActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Schedule Sample"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToScheduleActivity" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <Button
+            android:id="@+id/buttonToDanmuActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="弹幕示例"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToTimeTableActivity" />
+
+        <Button
+            android:id="@+id/buttonToDialogActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="弹窗示例"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToDanmuActivity" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

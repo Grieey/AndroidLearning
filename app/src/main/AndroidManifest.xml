@@ -38,6 +38,9 @@
         <activity
             android:name=".sample.danmu.DanmuDemoActivity"
             android:exported="false" />
+        <activity
+            android:name=".sample.dialog.DialogDemoActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

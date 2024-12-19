@@ -19,6 +19,7 @@ import com.learning.androidlearning.sample.database.SampleDatabaseActivity
 import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
 import com.learning.androidlearning.sample.schedule.ScheduleActivity
 import com.learning.androidlearning.sample.schedule.ScheduleActivityWithJava
+import com.learning.androidlearning.sample.dialog.DialogDemoActivity
 
 /*
  * Java equivalent:
@@ -116,6 +117,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToDanmu = findViewById<Button>(R.id.buttonToDanmuActivity)
         buttonToDanmu.setOnClickListener {
             val intent = Intent(this, DanmuDemoActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to DialogDemoActivity
+        val buttonToDialog = findViewById<Button>(R.id.buttonToDialogActivity)
+        buttonToDialog.setOnClickListener {
+            val intent = Intent(this, DialogDemoActivity::class.java)
             startActivity(intent)
         }
     }
