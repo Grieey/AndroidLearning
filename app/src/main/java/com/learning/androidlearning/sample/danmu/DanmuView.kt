@@ -63,6 +63,8 @@ class DanmuView @JvmOverloads constructor(
     private var pausedTime = 0L
     private var accumulatedTime = 0L
 
+    private var onNeedMoreDanmuListener: (() -> Unit)? = null
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -99,6 +101,8 @@ class DanmuView @JvmOverloads constructor(
 
     private fun updateDanmuPositions(distance: Float) {
         var needsRedraw = false
+        var hasVisibleDanmu = false
+        var maxX = Float.MIN_VALUE
 
         for (row in danmuRows.indices) {
             val currentRow = danmuRows[row]
@@ -112,12 +116,12 @@ class DanmuView @JvmOverloads constructor(
                 shouldRemove
             }
 
-            // 更新剩余弹幕的位置，使用计算出的距离
+            // 更新剩余弹幕的位置
             for (i in currentRow.indices) {
                 val holder = currentRow[i]
                 val prevHolder = if (i > 0) currentRow[i - 1] else null
 
-                // 更新位置，使用实际的时间间隔计算移动距离
+                // 更新位置
                 holder.updatePosition(-distance)
 
                 // 如果有前一个弹幕，检查间距
@@ -130,8 +134,18 @@ class DanmuView @JvmOverloads constructor(
                     }
                 }
 
-                needsRedraw = true
+                if (holder.x + holder.width > 0) {
+                    hasVisibleDanmu = true
+                    maxX = maxOf(maxX, holder.x + holder.width)
+                }
             }
+
+            needsRedraw = needsRedraw || currentRow.isNotEmpty()
+        }
+
+        // 检查是否需要加载更多弹幕
+        if (hasVisibleDanmu && maxX < width * 1.5) {
+            onNeedMoreDanmuListener?.invoke()
         }
 
         if (needsRedraw) {
@@ -143,9 +157,11 @@ class DanmuView @JvmOverloads constructor(
         onDanmuCompleteListener = listener
     }
 
+
     fun addDanmu(danmu: DanmuItem) {
         // 找到当前最少弹幕的行
         val rowIndex = (0 until DanmuConfig.MAX_LINES).minByOrNull { danmuRows[it].size } ?: 0
+        val row = danmuRows[rowIndex]
 
         val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
 
@@ -159,11 +175,10 @@ class DanmuView @JvmOverloads constructor(
         val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
                 (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
 
-        // 计算 x 坐标（从屏幕右边开始）
+        // 计算起始 x 坐标
         var startX = width.toFloat()
-
-        // 如果该行已经有弹幕，确保新弹幕在最后一个弹幕后面
-        val row = danmuRows[rowIndex]
+        
+        // 如果该行已有弹幕，确保新弹幕与最后一个弹幕保持安全距离
         if (row.isNotEmpty()) {
             val lastDanmu = row.last()
             startX = maxOf(startX, lastDanmu.x + lastDanmu.width + safeDistance)
@@ -178,9 +193,13 @@ class DanmuView @JvmOverloads constructor(
         )
         holder.updateRect()
 
-        danmuRows[rowIndex].add(holder)
+        // 添加到对应行
+        row.add(holder)
+        
+        // 加载图片
         loadAvatar(danmu.avatar, holder)
         danmu.image?.let { loadImage(it, holder) }
+        
         invalidate()
     }
 
@@ -574,5 +593,10 @@ class DanmuView @JvmOverloads constructor(
                 startScrollAnimation()
             }
         }
+    }
+
+    // 添加设置监听器的方法
+    fun setOnNeedMoreDanmuListener(listener: () -> Unit) {
+        onNeedMoreDanmuListener = listener
     }
 } 

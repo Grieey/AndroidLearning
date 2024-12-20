@@ -26,6 +26,9 @@ class DanmuDemoActivity : AppCompatActivity() {
     private var isUserPaused = false // 用户手动暂停的状态
     private lateinit var statusText: TextView
 
+    private var currentDanmuIndex = 0
+    private var currentBatchNumber = 1  // 添加批次号计数
+
     private fun decodeBase64Url(base64Url: String): String {
         return try {
             String(Base64.decode(base64Url, Base64.DEFAULT))
@@ -35,32 +38,16 @@ class DanmuDemoActivity : AppCompatActivity() {
         }
     }
 
-    private val testDanmuList = listOf(
-        // 样式1的弹幕
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "短名字",
-            content = "这是一条很短的弹幕",
-            image = "ic_red_packet",
-            style = DanmuItem.STYLE_1
-        ),
-        // 样式2的弹幕
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "这是一个特别长的用户名称",
-            content = "中等长度的弹幕内容示例",
-            image = "ic_red_packet",
-            style = DanmuItem.STYLE_2
-        ),
-        // ... 继续添加更多测试数据，交替使用两种样式 ...
-    ) + List(45) { index ->
-        DanmuItem(
-            avatar = decodeBase64Url(url),
-            username = "用户${index + 3}",
-            content = "这是第${index + 3}条测试弹幕",
-            image = "ic_red_packet",
-            style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
-        )
+    private fun generateDanmuList(count: Int, startIndex: Int = 0): List<DanmuItem> {
+        return List(count) { index ->
+            DanmuItem(
+                avatar = decodeBase64Url(url),
+                username = "用户${startIndex + index}",
+                content = "[批次${currentBatchNumber}]这是第${startIndex + index}条测试弹幕",
+                image = "ic_red_packet",
+                style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
+            )
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +62,21 @@ class DanmuDemoActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
 
         // 设置测试数据
-        danmuView.setDanmuList(testDanmuList)
+        danmuView.setDanmuList(generateDanmuList(30))
+        currentDanmuIndex = 30
+
+        // 设置需要更多弹幕的监听
+        danmuView.setOnNeedMoreDanmuListener {
+            currentBatchNumber++ // 增加批次号
+            // 添加新的30条弹幕
+            val newDanmuList = generateDanmuList(30, currentDanmuIndex)
+            currentDanmuIndex += 30
+            
+            // 将新弹幕添加到现有列表中
+            newDanmuList.forEach { danmu ->
+                danmuView.addDanmu(danmu)
+            }
+        }
 
         // 初始可见性检查
         danmuView.post {
@@ -103,7 +104,7 @@ class DanmuDemoActivity : AppCompatActivity() {
                 val newDanmu = DanmuItem(
                     avatar = decodeBase64Url(url),
                     username = "用户名",
-                    content = content,
+                    content = "[批次${currentBatchNumber}]$content",
                     image = "ic_red_packet",
                     style = if (Random.nextBoolean()) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
                 )
@@ -116,7 +117,7 @@ class DanmuDemoActivity : AppCompatActivity() {
         replayButton.setOnClickListener {
             isUserPaused = false
             isPaused = false
-            danmuView.replay()
+            replay()
             pauseResumeButton.text = "暂停"
             updateStatusText()
             updateDanmuVisibility()
@@ -189,5 +190,12 @@ class DanmuDemoActivity : AppCompatActivity() {
             else -> "状态：播放中"
         }
         statusText.text = status
+    }
+
+    // 修改重播逻辑
+    private fun replay() {
+        currentDanmuIndex = 30
+        currentBatchNumber = 1  // 重置批次号
+        danmuView.setDanmuList(generateDanmuList(30))
     }
 } 
