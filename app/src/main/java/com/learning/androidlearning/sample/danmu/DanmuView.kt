@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.learning.androidlearning.R
+import kotlin.math.abs
 
 class DanmuView @JvmOverloads constructor(
     context: Context,
@@ -67,6 +68,12 @@ class DanmuView @JvmOverloads constructor(
     private var onNeedMoreDanmuListener: (() -> Unit)? = null
 
     private var onDanmuClickListener: ((DanmuItem) -> Unit)? = null
+
+    // 添加触摸相关的属性
+    private var touchStartX = 0f
+    private var touchStartY = 0f
+    private var touchedDanmu: DanmuViewHolder? = null
+    private val touchSlop = 10f // 触摸容差，防止轻微移动也触发点击
 
     init {
         paint.style = Paint.Style.FILL
@@ -180,7 +187,7 @@ class DanmuView @JvmOverloads constructor(
 
         // 计算起始 x 坐标
         var startX = width.toFloat()
-        
+
         // 如果该行已有弹幕，确保新弹幕与最后一个弹幕保持安全距离
         if (row.isNotEmpty()) {
             val lastDanmu = row.last()
@@ -198,11 +205,11 @@ class DanmuView @JvmOverloads constructor(
 
         // 添加到对应行
         row.add(holder)
-        
+
         // 加载图片
         loadAvatar(danmu.avatar, holder)
         danmu.image?.let { loadImage(it, holder) }
-        
+
         invalidate()
     }
 
@@ -515,7 +522,7 @@ class DanmuView @JvmOverloads constructor(
 
     // 添加新方法：检查弹幕是否在可视区域内
     private fun isVisible(holder: DanmuViewHolder): Boolean {
-        // 创建一个扩展的可视区域，向右扩展一个屏幕宽度
+        // 创建一个��展的可视区域，向右扩展一个屏幕宽度
         val extendedVisibleRect = RectF(
             visibleRect.left,
             visibleRect.top,
@@ -612,23 +619,63 @@ class DanmuView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                // 检查点击位置是否在某个弹幕上
-                val touchX = event.x
-                val touchY = event.y
-                
-                // 遍历所有弹幕行
-                for (row in danmuRows) {
-                    // 从后往前遍历，这样可以优先处理上层的弹幕
-                    for (holder in row.reversed()) {
-                        // 检查点击是否在弹幕区域内
-                        if (holder.rect.contains(touchX, touchY)) {
-                            onDanmuClickListener?.invoke(holder.danmuItem)
-                            return true
-                        }
+                touchStartX = event.x
+                touchStartY = event.y
+
+                // 查找被点击的弹幕
+                touchedDanmu = findTouchedDanmu(touchStartX, touchStartY)
+                return touchedDanmu != null
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                // 如果移动距离超过阈值，取消点击
+                if (touchedDanmu != null) {
+                    val deltaX = abs(event.x - touchStartX)
+                    val deltaY = abs(event.y - touchStartY)
+                    if (deltaX > touchSlop || deltaY > touchSlop) {
+                        touchedDanmu = null
+                        return false
+                    }
+                    return true
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+                // 如果抬起时仍然有被点击的弹幕，且位置接近，则触发点击事件
+                touchedDanmu?.let {
+                    val deltaX = abs(event.x - touchStartX)
+                    val deltaY = abs(event.y - touchStartY)
+                    if (deltaX <= touchSlop && deltaY <= touchSlop) {
+                        onDanmuClickListener?.invoke(it.danmuItem)
+                        performClick()
                     }
                 }
+                touchedDanmu = null
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                touchedDanmu = null
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    // 添加 performClick 重写
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
+    // 查找被点击的弹幕
+    private fun findTouchedDanmu(x: Float, y: Float): DanmuViewHolder? {
+        for (row in danmuRows) {
+            // 从后往前遍历，这样可以优先处理上层的弹幕
+            for (holder in row.reversed()) {
+                if (holder.rect.contains(x, y)) {
+                    return holder
+                }
+            }
+        }
+        return null
     }
 }
