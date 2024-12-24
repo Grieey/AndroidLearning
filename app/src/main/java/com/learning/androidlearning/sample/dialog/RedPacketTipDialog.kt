@@ -1,5 +1,3 @@
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -9,10 +7,15 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
 import com.learning.androidlearning.R
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class RedPacketTipDialog : DialogFragment() {
     private var content: String? = null
+    private var dismissJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +33,9 @@ class RedPacketTipDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<TextView>(R.id.tvContent).text = content
+        
+        // 启动自动消失倒计时
+        startDismissTimer()
     }
 
     override fun onStart() {
@@ -45,6 +51,20 @@ class RedPacketTipDialog : DialogFragment() {
             }
             setWindowAnimations(R.style.RedPacketTipAnimation)
         }
+    }
+
+    private fun startDismissTimer() {
+        dismissJob?.cancel()
+        dismissJob = lifecycleScope.launch {
+            delay(3000) // 3秒后自动消失
+            dismiss()
+        }
+    }
+
+    override fun onDestroyView() {
+        dismissJob?.cancel()
+        dismissJob = null
+        super.onDestroyView()
     }
 
     companion object {

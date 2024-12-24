@@ -10,6 +10,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.LinearInterpolator
 import com.bumptech.glide.Glide
@@ -64,6 +65,8 @@ class DanmuView @JvmOverloads constructor(
     private var accumulatedTime = 0L
 
     private var onNeedMoreDanmuListener: (() -> Unit)? = null
+
+    private var onDanmuClickListener: ((DanmuItem) -> Unit)? = null
 
     init {
         paint.style = Paint.Style.FILL
@@ -599,4 +602,33 @@ class DanmuView @JvmOverloads constructor(
     fun setOnNeedMoreDanmuListener(listener: () -> Unit) {
         onNeedMoreDanmuListener = listener
     }
-} 
+
+    // 添加设置点击监听器的方法
+    fun setOnDanmuClickListener(listener: (DanmuItem) -> Unit) {
+        onDanmuClickListener = listener
+    }
+
+    // 在 onTouchEvent 中处理点击事件
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // 检查点击位置是否在某个弹幕上
+                val touchX = event.x
+                val touchY = event.y
+                
+                // 遍历所有弹幕行
+                for (row in danmuRows) {
+                    // 从后往前遍历，这样可以优先处理上层的弹幕
+                    for (holder in row.reversed()) {
+                        // 检查点击是否在弹幕区域内
+                        if (holder.rect.contains(touchX, touchY)) {
+                            onDanmuClickListener?.invoke(holder.danmuItem)
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+}

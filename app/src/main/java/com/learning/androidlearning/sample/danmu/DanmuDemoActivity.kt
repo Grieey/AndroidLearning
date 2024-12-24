@@ -7,6 +7,7 @@ import android.view.ViewTreeObserver
 import android.graphics.Rect
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.textfield.TextInputEditText
@@ -137,6 +138,15 @@ class DanmuDemoActivity : AppCompatActivity() {
         // 弹幕完成回调
         danmuView.setOnDanmuCompleteListener { danmu ->
             Log.d("DanmuDemo", "Danmu completed: ${danmu.content}")
+        }
+
+        // 设置弹幕点击监听
+        danmuView.setOnDanmuClickListener { danmu ->
+            Toast.makeText(
+                this,
+                "点击了弹幕: ${danmu.content}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
