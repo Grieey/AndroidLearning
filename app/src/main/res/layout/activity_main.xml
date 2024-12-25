@@ -113,5 +113,11 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/buttonToDanmuActivity" />
 
+        <Button
+            android:id="@+id/buttonToFlipClockActivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Flip Clock Demo" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

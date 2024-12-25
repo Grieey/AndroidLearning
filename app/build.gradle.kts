@@ -73,4 +73,6 @@ dependencies {
     // 添加 Coroutines 依赖
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")  // 用于 lifecycleScope
+
+    implementation("com.google.android.material:material:1.11.0")
 }

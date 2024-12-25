@@ -41,6 +41,10 @@
         <activity
             android:name=".sample.dialog.DialogDemoActivity"
             android:exported="false" />
+        <activity
+            android:name=".sample.flipclock.FlipClockDemoActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
     </application>
 
 </manifest>

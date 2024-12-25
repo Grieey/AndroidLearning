@@ -9,17 +9,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
-import com.learning.androidlearning.sample.profile.SampleProfileActivity
-import com.learning.androidlearning.sample.SampleViewPagerActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
 import com.learning.androidlearning.sample.customview.SampleCustomViewActivity
 import com.learning.androidlearning.sample.danmu.DanmuDemoActivity
-import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 import com.learning.androidlearning.sample.database.SampleDatabaseActivity
-import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
-import com.learning.androidlearning.sample.schedule.ScheduleActivity
-import com.learning.androidlearning.sample.schedule.ScheduleActivityWithJava
 import com.learning.androidlearning.sample.dialog.DialogDemoActivity
+import com.learning.androidlearning.sample.flipclock.FlipClockDemoActivity
+import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
+import com.learning.androidlearning.sample.schedule.ScheduleActivityWithJava
+import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
 
 /*
  * Java equivalent:
@@ -124,6 +122,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToDialog = findViewById<Button>(R.id.buttonToDialogActivity)
         buttonToDialog.setOnClickListener {
             val intent = Intent(this, DialogDemoActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to FlipClockDemoActivity
+        val buttonToFlipClock = findViewById<Button>(R.id.buttonToFlipClockActivity)
+        buttonToFlipClock.setOnClickListener {
+            val intent = Intent(this, FlipClockDemoActivity::class.java)
             startActivity(intent)
         }
     }
