@@ -19,11 +19,14 @@ import com.bumptech.glide.request.transition.Transition
 import com.learning.androidlearning.R
 import kotlin.math.abs
 
-class DanmuView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
+interface DanmuPlayCompleteListener {
+    fun onDanmuPlayComplete()
+}
+
+class DanmuView
+@JvmOverloads
+constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
+        View(context, attrs, defStyleAttr) {
 
     private val danmuRows = Array(DanmuConfig.MAX_LINES) { mutableListOf<DanmuViewHolder>() }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -34,31 +37,44 @@ class DanmuView @JvmOverloads constructor(
     private var animator: ValueAnimator? = null
     private var lastFrameTime = 0L
     private val scrollSpeed = 200f // 每秒移动的像素数
-    private val danmuHeight = context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
-    private val avatarSize = danmuHeight - 2 * context.resources.getDimensionPixelSize(R.dimen.danmu_padding_vertical).toFloat()
-    private val paddingLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
-    private val paddingRight = context.resources.getDimensionPixelSize(R.dimen.danmu_padding_right).toFloat()
+    private val danmuHeight =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
+    private val avatarSize =
+            danmuHeight -
+                    2 *
+                            context.resources
+                                    .getDimensionPixelSize(R.dimen.danmu_padding_vertical)
+                                    .toFloat()
+    private val paddingLeft =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_padding_left).toFloat()
+    private val paddingRight =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_padding_right).toFloat()
     private var onDanmuCompleteListener: ((DanmuItem) -> Unit)? = null
 
     private val allDanmuList = mutableListOf<DanmuItem>() // 存储所有弹幕
     private var currentIndex = 0 // 当前播放到的弹幕索引
 
-    private val safeDistance = context.resources.getDimensionPixelSize(R.dimen.danmu_safe_distance).toFloat()
+    private val safeDistance =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_safe_distance).toFloat()
 
-    private val textSize = context.resources.getDimensionPixelSize(R.dimen.danmu_text_size).toFloat()
+    private val textSize =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_text_size).toFloat()
     private val contentTextColor = Color.parseColor("#333333")
 
     // 添加可视区域矩形
     private val visibleRect = RectF()
 
     // 添加图片尺寸常量
-    private val imageSize = context.resources.getDimensionPixelSize(R.dimen.danmu_image_size).toFloat()
+    private val imageSize =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_image_size).toFloat()
 
     // 在 DanmuView 类中添加常量
-    private val imageMarginLeft = context.resources.getDimensionPixelSize(R.dimen.danmu_image_margin_left).toFloat()
+    private val imageMarginLeft =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_image_margin_left).toFloat()
 
     // 添加行间距属性
-    private val rowSpacing = context.resources.getDimensionPixelSize(R.dimen.danmu_row_spacing).toFloat()
+    private val rowSpacing =
+            context.resources.getDimensionPixelSize(R.dimen.danmu_row_spacing).toFloat()
 
     private var isAnimating = false
     private var isPaused = false
@@ -75,6 +91,9 @@ class DanmuView @JvmOverloads constructor(
     private var touchedDanmu: DanmuViewHolder? = null
     private val touchSlop = 10f // 触摸容差，防止轻微移动也触发点击
 
+    // 添加监听器变量
+    private var danmuPlayCompleteListener: DanmuPlayCompleteListener? = null
+
     init {
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -88,25 +107,26 @@ class DanmuView @JvmOverloads constructor(
         accumulatedTime = 0
 
         animator?.cancel()
-        animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 16 // 16ms per frame for 60fps
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-            addUpdateListener {
-                if (!isPaused) {
-                    val currentTime = System.nanoTime()
-                    val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
-                    lastFrameTime = currentTime
+        animator =
+                ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 16 // 16ms per frame for 60fps
+                    repeatCount = ValueAnimator.INFINITE
+                    interpolator = LinearInterpolator()
+                    addUpdateListener {
+                        if (!isPaused) {
+                            val currentTime = System.nanoTime()
+                            val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
+                            lastFrameTime = currentTime
 
-                    // 累积时间，用于计算总位移
-                    accumulatedTime += (deltaTime * 1_000_000_000).toLong()
+                            // 累积时间，用于计算总位移
+                            accumulatedTime += (deltaTime * 1_000_000_000).toLong()
 
-                    val distance = scrollSpeed * deltaTime
-                    updateDanmuPositions(distance)
+                            val distance = scrollSpeed * deltaTime
+                            updateDanmuPositions(distance)
+                        }
+                    }
+                    start()
                 }
-            }
-            start()
-        }
     }
 
     private fun updateDanmuPositions(distance: Float) {
@@ -167,7 +187,6 @@ class DanmuView @JvmOverloads constructor(
         onDanmuCompleteListener = listener
     }
 
-
     fun addDanmu(danmu: DanmuItem) {
         // 找到当前最少弹幕的行
         val rowIndex = (0 until DanmuConfig.MAX_LINES).minByOrNull { danmuRows[it].size } ?: 0
@@ -176,14 +195,20 @@ class DanmuView @JvmOverloads constructor(
         val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
 
         // 计算宽度
-        val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
-            textPaint.measureText(danmu.username + "  " + danmu.content)
-        } else {
-            textPaint.measureText(danmu.content)
-        }
+        val textWidth =
+                if (danmu.style == DanmuItem.STYLE_1) {
+                    textPaint.measureText(danmu.username + "  " + danmu.content)
+                } else {
+                    textPaint.measureText(danmu.content)
+                }
 
-        val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
-                (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
+        val totalWidth =
+                paddingLeft +
+                        avatarSize +
+                        paddingLeft +
+                        textWidth +
+                        (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) +
+                        paddingRight
 
         // 计算起始 x 坐标
         var startX = width.toFloat()
@@ -194,13 +219,14 @@ class DanmuView @JvmOverloads constructor(
             startX = maxOf(startX, lastDanmu.x + lastDanmu.width + safeDistance)
         }
 
-        val holder = DanmuViewHolder(
-            danmuItem = danmu,
-            x = startX,
-            y = y,
-            width = totalWidth,
-            height = danmuHeight
-        )
+        val holder =
+                DanmuViewHolder(
+                        danmuItem = danmu,
+                        x = startX,
+                        y = y,
+                        width = totalWidth,
+                        height = danmuHeight
+                )
         holder.updateRect()
 
         // 添加到对应行
@@ -221,48 +247,56 @@ class DanmuView @JvmOverloads constructor(
         }
 
         Glide.with(context)
-            .asBitmap()
-            .load(url)
-            .override(avatarSize.toInt(), avatarSize.toInt())
-            .circleCrop() // Glide 4.11.0 的圆形裁剪
-            .into(object : CustomTarget<Bitmap>(avatarSize.toInt(), avatarSize.toInt()) {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    // 创建一个新的 Bitmap，确保填充整个区域
-                    val targetSize = avatarSize.toInt()
-                    val scale = maxOf(
-                        targetSize.toFloat() / resource.width,
-                        targetSize.toFloat() / resource.height
-                    )
-                    val scaledWidth = (resource.width * scale).toInt()
-                    val scaledHeight = (resource.height * scale).toInt()
+                .asBitmap()
+                .load(url)
+                .override(avatarSize.toInt(), avatarSize.toInt())
+                .circleCrop() // Glide 4.11.0 的圆形裁剪
+                .into(
+                        object : CustomTarget<Bitmap>(avatarSize.toInt(), avatarSize.toInt()) {
+                            override fun onResourceReady(
+                                    resource: Bitmap,
+                                    transition: Transition<in Bitmap>?
+                            ) {
+                                // 创建一个新的 Bitmap，确保填充整个区域
+                                val targetSize = avatarSize.toInt()
+                                val scale =
+                                        maxOf(
+                                                targetSize.toFloat() / resource.width,
+                                                targetSize.toFloat() / resource.height
+                                        )
+                                val scaledWidth = (resource.width * scale).toInt()
+                                val scaledHeight = (resource.height * scale).toInt()
 
-                    val scaledBitmap = Bitmap.createScaledBitmap(
-                        resource,
-                        scaledWidth,
-                        scaledHeight,
-                        true
-                    )
+                                val scaledBitmap =
+                                        Bitmap.createScaledBitmap(
+                                                resource,
+                                                scaledWidth,
+                                                scaledHeight,
+                                                true
+                                        )
 
-                    // 居中裁剪
-                    val x = (scaledWidth - targetSize) / 2
-                    val y = (scaledHeight - targetSize) / 2
-                    val finalBitmap = Bitmap.createBitmap(
-                        scaledBitmap,
-                        maxOf(0, x),
-                        maxOf(0, y),
-                        targetSize,
-                        targetSize
-                    )
+                                // 居中裁剪
+                                val x = (scaledWidth - targetSize) / 2
+                                val y = (scaledHeight - targetSize) / 2
+                                val finalBitmap =
+                                        Bitmap.createBitmap(
+                                                scaledBitmap,
+                                                maxOf(0, x),
+                                                maxOf(0, y),
+                                                targetSize,
+                                                targetSize
+                                        )
 
-                    avatarCache[url] = finalBitmap
-                    holder.avatarBitmap = finalBitmap
-                    invalidate()
-                }
+                                avatarCache[url] = finalBitmap
+                                holder.avatarBitmap = finalBitmap
+                                invalidate()
+                            }
 
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    // 处理加载被清除的情况
-                }
-            })
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                // 处理加载被清除的情况
+                            }
+                        }
+                )
     }
 
     private fun loadImage(url: String, holder: DanmuViewHolder) {
@@ -271,19 +305,25 @@ class DanmuView @JvmOverloads constructor(
             val resourceId = context.resources.getIdentifier(url, "drawable", context.packageName)
             if (resourceId != 0) {
                 Glide.with(context)
-                    .asBitmap()
-                    .load(resourceId)
-                    .override(imageSize.toInt(), imageSize.toInt())
-                    .into(object : CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
-                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                            holder.imageBitmap = resource
-                            invalidate()
-                        }
+                        .asBitmap()
+                        .load(resourceId)
+                        .override(imageSize.toInt(), imageSize.toInt())
+                        .into(
+                                object :
+                                        CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
+                                    override fun onResourceReady(
+                                            resource: Bitmap,
+                                            transition: Transition<in Bitmap>?
+                                    ) {
+                                        holder.imageBitmap = resource
+                                        invalidate()
+                                    }
 
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                            // 处理加载被清除的情况
-                        }
-                    })
+                                    override fun onLoadCleared(placeholder: Drawable?) {
+                                        // 处理加载被清除的情况
+                                    }
+                                }
+                        )
             }
             return
         }
@@ -296,45 +336,74 @@ class DanmuView @JvmOverloads constructor(
         }
 
         Glide.with(context)
-            .asBitmap()
-            .load(url)
-            .override(imageSize.toInt(), imageSize.toInt())
-            .error(R.drawable.default_image)
-            .fallback(R.drawable.default_image)
-            .into(object : CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    imageCache[url] = resource
-                    holder.imageBitmap = resource
-                    invalidate()
-                }
+                .asBitmap()
+                .load(url)
+                .override(imageSize.toInt(), imageSize.toInt())
+                .error(R.drawable.default_image)
+                .fallback(R.drawable.default_image)
+                .into(
+                        object : CustomTarget<Bitmap>(imageSize.toInt(), imageSize.toInt()) {
+                            override fun onResourceReady(
+                                    resource: Bitmap,
+                                    transition: Transition<in Bitmap>?
+                            ) {
+                                imageCache[url] = resource
+                                holder.imageBitmap = resource
+                                invalidate()
+                            }
 
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    // 处理加载被清除的情况
-                }
-            })
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                // 处理加载被清除的情况
+                            }
+                        }
+                )
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
+        // 检查是否所有弹幕都已经完全消失
+        var allDanmusGone = true
+        var hasVisibleDanmus = false
+
         danmuRows.forEach { row ->
             row.forEach { holder ->
-                // 检查弹幕是否在可视区域内
-                if (isVisible(holder)) {
+                if (holder.x + holder.width > 0) {
+                    allDanmusGone = false
+                    hasVisibleDanmus = true
                     drawDanmu(canvas, holder)
                 }
             }
+        }
+
+        // 只有当所有弹幕都消失，且当前索引已经到达列表末尾时，才触发播放完成
+        if (allDanmusGone &&
+                        !hasVisibleDanmus &&
+                        currentIndex >= allDanmuList.size &&
+                        allDanmuList.isNotEmpty()
+        ) {
+            // 通知播放完成
+            danmuPlayCompleteListener?.onDanmuPlayComplete()
+            // 清空弹幕列表
+            allDanmuList.clear()
+            currentIndex = 0
+        }
+
+        // 如果还有弹幕在显示，继续刷新
+        if (!allDanmusGone || currentIndex < allDanmuList.size) {
+            invalidate()
         }
     }
 
     private fun drawDanmu(canvas: Canvas, holder: DanmuViewHolder) {
         // 绘制背景
         paint.style = Paint.Style.FILL
-        paint.shader = DanmuConfig.createGradientShader(
-            holder.width,
-            holder.height,
-            holder.danmuItem.style == DanmuItem.STYLE_1
-        )
+        paint.shader =
+                DanmuConfig.createGradientShader(
+                        holder.width,
+                        holder.height,
+                        holder.danmuItem.style == DanmuItem.STYLE_1
+                )
         val cornerRadius = holder.height / 2
         canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
@@ -352,25 +421,27 @@ class DanmuView @JvmOverloads constructor(
 
         // 绘制头像，保持在32dp高度内
         holder.avatarBitmap?.let { avatar ->
-            val avatarRect = RectF(
-                holder.x + paddingLeft,
-                holder.y - holder.height,
-                holder.x + paddingLeft + avatarSize,
-                holder.y
-            )
+            val avatarRect =
+                    RectF(
+                            holder.x + paddingLeft,
+                            holder.y - holder.height,
+                            holder.x + paddingLeft + avatarSize,
+                            holder.y
+                    )
 
             // 保存画布状态
             canvas.save()
 
             // 创建圆形裁剪区域
-            val path = Path().apply {
-                addCircle(
-                    avatarRect.centerX(),
-                    avatarRect.centerY(),
-                    avatarSize / 2,
-                    Path.Direction.CW
-                )
-            }
+            val path =
+                    Path().apply {
+                        addCircle(
+                                avatarRect.centerX(),
+                                avatarRect.centerY(),
+                                avatarSize / 2,
+                                Path.Direction.CW
+                        )
+                    }
             canvas.clipPath(path)
 
             // 绘制头像
@@ -394,7 +465,12 @@ class DanmuView @JvmOverloads constructor(
             val usernameWidth = textPaint.measureText(holder.danmuItem.username)
             textPaint.color = contentTextColor
             textPaint.isFakeBoldText = false
-            canvas.drawText(holder.danmuItem.content, textX + usernameWidth + paddingLeft, textY, textPaint)
+            canvas.drawText(
+                    holder.danmuItem.content,
+                    textX + usernameWidth + paddingLeft,
+                    textY,
+                    textPaint
+            )
         } else {
             // 样式2：只绘制内容
             textPaint.color = contentTextColor
@@ -404,19 +480,22 @@ class DanmuView @JvmOverloads constructor(
 
         // 绘制图片，确保在32dp高度内垂直居中
         holder.imageBitmap?.let { image ->
-            val contentWidth = if (holder.danmuItem.style == DanmuItem.STYLE_1) {
-                textPaint.measureText(holder.danmuItem.username) + paddingLeft +
+            val contentWidth =
+                    if (holder.danmuItem.style == DanmuItem.STYLE_1) {
+                        textPaint.measureText(holder.danmuItem.username) +
+                                paddingLeft +
+                                textPaint.measureText(holder.danmuItem.content)
+                    } else {
                         textPaint.measureText(holder.danmuItem.content)
-            } else {
-                textPaint.measureText(holder.danmuItem.content)
-            }
+                    }
 
-            val imageRect = RectF(
-                textX + contentWidth + imageMarginLeft,
-                holder.y - holder.height / 2 - imageSize / 2,
-                textX + contentWidth + imageMarginLeft + imageSize,
-                holder.y - holder.height / 2 + imageSize / 2
-            )
+            val imageRect =
+                    RectF(
+                            textX + contentWidth + imageMarginLeft,
+                            holder.y - holder.height / 2 - imageSize / 2,
+                            textX + contentWidth + imageMarginLeft + imageSize,
+                            holder.y - holder.height / 2 + imageSize / 2
+                    )
             canvas.drawBitmap(image, null, imageRect, paint)
         }
     }
@@ -457,14 +536,17 @@ class DanmuView @JvmOverloads constructor(
     }
 
     private fun startDisplayingDanmu() {
-        postDelayed(object : Runnable {
-            override fun run() {
-                if (currentIndex < allDanmuList.size) {
-                    addNextColumnDanmu()
-                    postDelayed(this, calculateNextDelay())
-                }
-            }
-        }, calculateNextDelay())
+        postDelayed(
+                object : Runnable {
+                    override fun run() {
+                        if (currentIndex < allDanmuList.size) {
+                            addNextColumnDanmu()
+                            postDelayed(this, calculateNextDelay())
+                        }
+                    }
+                },
+                calculateNextDelay()
+        )
     }
 
     private fun addNextColumnDanmu() {
@@ -483,23 +565,30 @@ class DanmuView @JvmOverloads constructor(
             val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
 
             // 计算弹幕宽度
-            val textWidth = if (danmu.style == DanmuItem.STYLE_1) {
-                textPaint.measureText(danmu.username + "  " + danmu.content)
-            } else {
-                textPaint.measureText(danmu.content)
-            }
+            val textWidth =
+                    if (danmu.style == DanmuItem.STYLE_1) {
+                        textPaint.measureText(danmu.username + "  " + danmu.content)
+                    } else {
+                        textPaint.measureText(danmu.content)
+                    }
 
-            val totalWidth = paddingLeft + avatarSize + paddingLeft + textWidth +
-                    (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) + paddingRight
+            val totalWidth =
+                    paddingLeft +
+                            avatarSize +
+                            paddingLeft +
+                            textWidth +
+                            (danmu.image?.let { imageSize + imageMarginLeft } ?: 0f) +
+                            paddingRight
 
             // 创建 holder
-            val holder = DanmuViewHolder(
-                danmuItem = danmu,
-                x = columnStartX,
-                y = y,
-                width = totalWidth,
-                height = danmuHeight
-            )
+            val holder =
+                    DanmuViewHolder(
+                            danmuItem = danmu,
+                            x = columnStartX,
+                            y = y,
+                            width = totalWidth,
+                            height = danmuHeight
+                    )
             holder.updateRect()
 
             // 添加到对应行
@@ -522,21 +611,17 @@ class DanmuView @JvmOverloads constructor(
 
     // 添加新方法：检查弹幕是否在可视区域内
     private fun isVisible(holder: DanmuViewHolder): Boolean {
-        // 创建一个��展的可视区域，向右扩展一个屏幕宽度
-        val extendedVisibleRect = RectF(
-            visibleRect.left,
-            visibleRect.top,
-            visibleRect.right + width, // 向右扩展一个屏幕宽度
-            visibleRect.bottom
-        )
+        // 创建一个向右扩展的可视区域，向右扩展一个屏幕宽度
+        val extendedVisibleRect =
+                RectF(
+                        visibleRect.left,
+                        visibleRect.top,
+                        visibleRect.right + width, // 向右扩展一个屏幕宽度
+                        visibleRect.bottom
+                )
 
         // 创建弹幕的包围盒
-        val danmuRect = RectF(
-            holder.x,
-            holder.y - holder.height,
-            holder.x + holder.width,
-            holder.y
-        )
+        val danmuRect = RectF(holder.x, holder.y - holder.height, holder.x + holder.width, holder.y)
 
         // 检查是否与扩展的可视区域相交
         return RectF.intersects(extendedVisibleRect, danmuRect)
@@ -562,20 +647,22 @@ class DanmuView @JvmOverloads constructor(
         val heightMode = MeasureSpec.getMode(heightMeasureSpec)
         val heightSize = MeasureSpec.getSize(heightMeasureSpec)
 
-        val width = when (widthMode) {
-            MeasureSpec.EXACTLY -> widthSize
-            MeasureSpec.AT_MOST -> widthSize
-            else -> suggestedMinimumWidth
-        }
+        val width =
+                when (widthMode) {
+                    MeasureSpec.EXACTLY -> widthSize
+                    MeasureSpec.AT_MOST -> widthSize
+                    else -> suggestedMinimumWidth
+                }
 
         // 计算所需的高度：行数 * (弹幕高度 + 行间距) + 顶部和底部的行间距
         val desiredHeight = DanmuConfig.MAX_LINES * (danmuHeight + rowSpacing) + rowSpacing
 
-        val height = when (heightMode) {
-            MeasureSpec.EXACTLY -> heightSize
-            MeasureSpec.AT_MOST -> desiredHeight.toInt().coerceAtMost(heightSize)
-            else -> desiredHeight.toInt()
-        }
+        val height =
+                when (heightMode) {
+                    MeasureSpec.EXACTLY -> heightSize
+                    MeasureSpec.AT_MOST -> desiredHeight.toInt().coerceAtMost(heightSize)
+                    else -> desiredHeight.toInt()
+                }
 
         setMeasuredDimension(width, height)
     }
@@ -626,7 +713,6 @@ class DanmuView @JvmOverloads constructor(
                 touchedDanmu = findTouchedDanmu(touchStartX, touchStartY)
                 return touchedDanmu != null
             }
-
             MotionEvent.ACTION_MOVE -> {
                 // 如果移动距离超过阈值，取消点击
                 if (touchedDanmu != null) {
@@ -639,7 +725,6 @@ class DanmuView @JvmOverloads constructor(
                     return true
                 }
             }
-
             MotionEvent.ACTION_UP -> {
                 // 如果抬起时仍然有被点击的弹幕，且位置接近，则触发点击事件
                 touchedDanmu?.let {
@@ -652,7 +737,6 @@ class DanmuView @JvmOverloads constructor(
                 }
                 touchedDanmu = null
             }
-
             MotionEvent.ACTION_CANCEL -> {
                 touchedDanmu = null
             }
@@ -677,5 +761,10 @@ class DanmuView @JvmOverloads constructor(
             }
         }
         return null
+    }
+
+    // 添加设置监听器的方法
+    fun setDanmuPlayCompleteListener(listener: DanmuPlayCompleteListener) {
+        this.danmuPlayCompleteListener = listener
     }
 }
