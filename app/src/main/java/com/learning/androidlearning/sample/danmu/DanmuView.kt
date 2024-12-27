@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
@@ -20,6 +21,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.learning.androidlearning.R
+import java.util.ArrayDeque
 import kotlin.math.abs
 
 interface DanmuPlayCompleteListener {
@@ -38,7 +40,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private val imageCache = mutableMapOf<String, Bitmap>()
 
     private var animator: ValueAnimator? = null
-    private var lastFrameTime = 0L
+    private var lastFrameTime = System.nanoTime()
+    private var accumulatedDelta = 0f
+    private val FRAME_INTERVAL = 16_666_667L // 约60fps
+    private val MAX_DELTA_TIME = 32_000_000L // 最大帧间隔，防止大幅跳变
     private val scrollSpeed = 200f // 每秒移动的像素数
     private val danmuHeight =
             context.resources.getDimensionPixelSize(R.dimen.danmu_height).toFloat()
@@ -97,16 +102,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     // 添加监听器变量
     private var danmuPlayCompleteListener: DanmuPlayCompleteListener? = null
 
+    // 添加缓存相关的属性
+    private val matrixPool = ObjectPool(4) { Matrix() }
+    private val rectFPool = ObjectPool(8) { RectF() }
+
     init {
         // 开启硬件加速
         setLayerType(LAYER_TYPE_HARDWARE, null)
 
-        paint.isAntiAlias = true
-        textPaint.isAntiAlias = true
+        // 设置绘制时的一些优化标志
+        paint.apply {
+            isAntiAlias = true
+            isDither = true
+            isFilterBitmap = true
+        }
 
-        // 预创建对象，避免在绘制时创建
-        paint.isDither = true
-        textPaint.isDither = true
+        textPaint.apply {
+            isAntiAlias = true
+            isDither = true
+            isSubpixelText = true
+        }
 
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
@@ -117,26 +132,33 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         if (isAnimating) return
         isAnimating = true
         lastFrameTime = System.nanoTime()
-        accumulatedTime = 0
+        accumulatedDelta = 0f
 
         animator?.cancel()
         animator =
                 ValueAnimator.ofFloat(0f, 1f).apply {
-                    duration = 16 // 16ms per frame for 60fps
+                    duration = 16 // 16ms per frame
                     repeatCount = ValueAnimator.INFINITE
                     interpolator = LinearInterpolator()
                     addUpdateListener {
                         if (!isPaused) {
                             val currentTime = System.nanoTime()
-                            val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
+                            var deltaTime = currentTime - lastFrameTime
+
+                            // 限制最大帧间隔，防止大幅跳变
+                            deltaTime = deltaTime.coerceAtMost(MAX_DELTA_TIME)
+
+                            // 累积小的位移
+                            accumulatedDelta += (deltaTime / 1_000_000_000f) * scrollSpeed
+
+                            // 当累积的位移达到一定程度时才更新位置
+                            if (accumulatedDelta >= 1f) {
+                                val distance = accumulatedDelta.toInt().toFloat()
+                                accumulatedDelta -= distance
+                                updateDanmuPositions(distance)
+                            }
+
                             lastFrameTime = currentTime
-
-                            // 使用累积时间来平滑动画
-                            accumulatedTime += (deltaTime * 1_000_000_000).toLong()
-                            val distance = scrollSpeed * deltaTime
-
-                            // 使用 postInvalidateOnAnimation 代替 invalidate
-                            updateDanmuPositions(distance)
                             postInvalidateOnAnimation()
                         }
                     }
@@ -149,6 +171,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         var hasVisibleDanmu = false
         var maxX = Float.MIN_VALUE
 
+        // 使用视口范围优化
+        val viewportLeft = -width * 0.5f
+        val viewportRight = width * 1.5f
+
         for (row in danmuRows.indices) {
             val currentRow = danmuRows[row]
             val iterator = currentRow.iterator()
@@ -156,29 +182,37 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
             while (iterator.hasNext()) {
                 val holder = iterator.next()
-                if (holder.x + holder.width < -width) {
+
+                // 移除已经完全离开视口的弹幕
+                if (holder.x + holder.width < viewportLeft) {
                     iterator.remove()
                     onDanmuCompleteListener?.invoke(holder.danmuItem)
                     continue
                 }
 
-                holder.updatePosition(-distance)
+                // 只更新视口范围内的弹幕位置
+                if (holder.x <= viewportRight) {
+                    val oldX = holder.x
+                    holder.updatePosition(-distance)
 
-                // 检查与前一个弹幕的间距
-                prevHolder?.let { prev ->
-                    val currentDistance = holder.x - (prev.x + prev.width)
-                    if (currentDistance < safeDistance) {
-                        // 如果间距小于安全距离，调整位置
-                        holder.x = prev.x + prev.width + safeDistance
-                        holder.updateRect()
+                    // 检查与前一个弹幕的间距
+                    prevHolder?.let { prev ->
+                        val currentDistance = holder.x - (prev.x + prev.width)
+                        if (currentDistance < safeDistance) {
+                            holder.x = prev.x + prev.width + safeDistance
+                            // 只有位置真正改变时才更新矩形
+                            if (holder.x != oldX) {
+                                holder.updateRect()
+                            }
+                        }
                     }
-                }
-                prevHolder = holder
+                    prevHolder = holder
 
-                if (holder.x + holder.width > 0) {
-                    hasVisibleDanmu = true
-                    maxX = maxOf(maxX, holder.x + holder.width)
-                    needsRedraw = true
+                    if (holder.x + holder.width > 0) {
+                        hasVisibleDanmu = true
+                        maxX = maxOf(maxX, holder.x + holder.width)
+                        needsRedraw = true
+                    }
                 }
             }
         }
@@ -376,36 +410,39 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         var allDanmusGone = true
         var hasVisibleDanmus = false
 
-        // 只绘制可见区域的弹幕
-        val visibleLeft = -width.toFloat()
-        val visibleRight = width * 2f
+        // 优化视口范围
+        val viewportLeft = -width * 0.5f
+        val viewportRight = width * 1.5f
+
+        // 使用临时对象存储需要绘制的弹幕
+        val visibleDanmus = mutableListOf<DanmuViewHolder>()
 
         danmuRows.forEach { row ->
             row.forEach { holder ->
-                if (holder.x <= visibleRight && holder.x + holder.width >= visibleLeft) {
+                if (holder.x <= viewportRight && holder.x + holder.width >= viewportLeft) {
                     allDanmusGone = false
                     hasVisibleDanmus = true
-                    drawDanmu(canvas, holder)
+                    visibleDanmus.add(holder)
                 }
             }
         }
 
-        // 只有当所有弹幕都消失，且当前索引已经到达列表末尾时，才触发播放完成
+        // 批量绘制可见的弹幕
+        visibleDanmus.forEach { holder -> drawDanmu(canvas, holder) }
+
+        // 检查播放完成状态
         if (allDanmusGone &&
                         !hasVisibleDanmus &&
                         currentIndex >= allDanmuList.size &&
                         allDanmuList.isNotEmpty()
         ) {
-            // 通知播放完成
             danmuPlayCompleteListener?.onDanmuPlayComplete()
-            // 清空弹幕列表
             allDanmuList.clear()
             currentIndex = 0
         }
 
-        // 如果还有弹幕在显示，继续刷新
         if (!allDanmusGone || currentIndex < allDanmuList.size) {
-            invalidate()
+            postInvalidateOnAnimation()
         }
     }
 
@@ -818,5 +855,17 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
 
         return bestRow
+    }
+
+    private class ObjectPool<T>(capacity: Int, private val factory: () -> T) {
+        private val pool = ArrayDeque<T>(capacity)
+
+        fun acquire(): T {
+            return if (pool.isEmpty()) factory() else pool.removeFirst()
+        }
+
+        fun release(obj: T) {
+            pool.addLast(obj)
+        }
     }
 }
