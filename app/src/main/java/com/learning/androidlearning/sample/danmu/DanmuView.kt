@@ -7,7 +7,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
@@ -97,6 +96,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private var danmuPlayCompleteListener: DanmuPlayCompleteListener? = null
 
     init {
+        // 开启硬件加速
+        setLayerType(LAYER_TYPE_HARDWARE, null)
+
+        paint.isAntiAlias = true
+        textPaint.isAntiAlias = true
+
+        // 预创建对象，避免在绘制时创建
+        paint.isDither = true
+        textPaint.isDither = true
+
         paint.style = Paint.Style.FILL
         textPaint.textSize = textSize
         startScrollAnimation()
@@ -120,11 +129,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                             val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f
                             lastFrameTime = currentTime
 
-                            // 累积时间，用于计算总位移
+                            // 使用累积时间来平滑动画
                             accumulatedTime += (deltaTime * 1_000_000_000).toLong()
-
                             val distance = scrollSpeed * deltaTime
+
+                            // 使用 postInvalidateOnAnimation 代替 invalidate
                             updateDanmuPositions(distance)
+                            postInvalidateOnAnimation()
                         }
                     }
                     start()
@@ -138,25 +149,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
         for (row in danmuRows.indices) {
             val currentRow = danmuRows[row]
+            val iterator = currentRow.iterator()
+            var prevHolder: DanmuViewHolder? = null
 
-            // 移除已经完全离开扩展可视区域的弹幕
-            currentRow.removeAll { holder ->
-                val shouldRemove = holder.x + holder.width < -width
-                if (shouldRemove) {
+            while (iterator.hasNext()) {
+                val holder = iterator.next()
+                if (holder.x + holder.width < -width) {
+                    iterator.remove()
                     onDanmuCompleteListener?.invoke(holder.danmuItem)
+                    continue
                 }
-                shouldRemove
-            }
 
-            // 更新剩余弹幕的位置
-            for (i in currentRow.indices) {
-                val holder = currentRow[i]
-                val prevHolder = if (i > 0) currentRow[i - 1] else null
-
-                // 更新位置
                 holder.updatePosition(-distance)
 
-                // 如果有前一个弹幕，检查间距
+                // 检查与前一个弹幕的间距
                 prevHolder?.let { prev ->
                     val currentDistance = holder.x - (prev.x + prev.width)
                     if (currentDistance < safeDistance) {
@@ -165,23 +171,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                         holder.updateRect()
                     }
                 }
+                prevHolder = holder
 
                 if (holder.x + holder.width > 0) {
                     hasVisibleDanmu = true
                     maxX = maxOf(maxX, holder.x + holder.width)
+                    needsRedraw = true
                 }
             }
-
-            needsRedraw = needsRedraw || currentRow.isNotEmpty()
         }
 
-        // 检查是否需要加载更多弹幕
         if (hasVisibleDanmu && maxX < width * 1.5) {
             onNeedMoreDanmuListener?.invoke()
         }
 
         if (needsRedraw) {
-            invalidate()
+            postInvalidateOnAnimation()
         }
     }
 
@@ -190,8 +195,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     }
 
     fun addDanmu(danmu: DanmuItem) {
-        // 找到当前最少弹幕的行
-        val rowIndex = (0 until DanmuConfig.MAX_LINES).minByOrNull { danmuRows[it].size } ?: 0
+        // 找到最适合的行
+        val rowIndex = findBestRow()
         val row = danmuRows[rowIndex]
 
         val y = rowSpacing + (rowIndex * (danmuHeight + rowSpacing)) + danmuHeight
@@ -252,45 +257,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 .asBitmap()
                 .load(url)
                 .override(avatarSize.toInt(), avatarSize.toInt())
-                .circleCrop() // Glide 4.11.0 的圆形裁剪
+                .circleCrop()
                 .into(
-                        object : CustomTarget<Bitmap>(avatarSize.toInt(), avatarSize.toInt()) {
+                        object : CustomTarget<Bitmap>() {
                             override fun onResourceReady(
                                     resource: Bitmap,
                                     transition: Transition<in Bitmap>?
                             ) {
-                                // 创建一个新的 Bitmap，确保填充整个区域
-                                val targetSize = avatarSize.toInt()
-                                val scale =
-                                        maxOf(
-                                                targetSize.toFloat() / resource.width,
-                                                targetSize.toFloat() / resource.height
-                                        )
-                                val scaledWidth = (resource.width * scale).toInt()
-                                val scaledHeight = (resource.height * scale).toInt()
-
-                                val scaledBitmap =
-                                        Bitmap.createScaledBitmap(
-                                                resource,
-                                                scaledWidth,
-                                                scaledHeight,
-                                                true
-                                        )
-
-                                // 居中裁剪
-                                val x = (scaledWidth - targetSize) / 2
-                                val y = (scaledHeight - targetSize) / 2
-                                val finalBitmap =
-                                        Bitmap.createBitmap(
-                                                scaledBitmap,
-                                                maxOf(0, x),
-                                                maxOf(0, y),
-                                                targetSize,
-                                                targetSize
-                                        )
-
-                                avatarCache[url] = finalBitmap
-                                holder.avatarBitmap = finalBitmap
+                                // 直接使用 Glide 的 circleCrop 后的位图，不需要再次处理
+                                avatarCache[url] = resource
+                                holder.avatarBitmap = resource
                                 invalidate()
                             }
 
@@ -364,13 +340,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 检查是否所有弹幕都已经完全消失
         var allDanmusGone = true
         var hasVisibleDanmus = false
 
+        // 只绘制可见区域的弹幕
+        val visibleLeft = -width.toFloat()
+        val visibleRight = width * 2f
+
         danmuRows.forEach { row ->
             row.forEach { holder ->
-                if (holder.x + holder.width > 0) {
+                if (holder.x <= visibleRight && holder.x + holder.width >= visibleLeft) {
                     allDanmusGone = false
                     hasVisibleDanmus = true
                     drawDanmu(canvas, holder)
@@ -454,36 +433,17 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         paint.style = Paint.Style.FILL
         paint.color = Color.WHITE
 
-        // 绘制头像，保持在32dp高度内
+        // 绘制头像
         holder.avatarBitmap?.let { avatar ->
             val avatarRect =
                     RectF(
                             holder.x + paddingLeft,
-                            holder.y - holder.height,
+                            holder.y - holder.height + (holder.height - avatarSize) / 2, // 垂直居中
                             holder.x + paddingLeft + avatarSize,
-                            holder.y
+                            holder.y - (holder.height - avatarSize) / 2 // 垂直居中
                     )
-
-            // 保存画布状态
-            canvas.save()
-
-            // 创建圆形裁剪区域
-            val path =
-                    Path().apply {
-                        addCircle(
-                                avatarRect.centerX(),
-                                avatarRect.centerY(),
-                                avatarSize / 2,
-                                Path.Direction.CW
-                        )
-                    }
-            canvas.clipPath(path)
-
-            // 绘制头像
+            // 直接绘制圆形裁剪后的头像，不需要再次裁剪
             canvas.drawBitmap(avatar, null, avatarRect, paint)
-
-            // 恢复画布状态
-            canvas.restore()
         }
 
         // 绘制文本，确保在32dp高度内垂直居中
@@ -801,5 +761,29 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     // 添加设置监听器的方法
     fun setDanmuPlayCompleteListener(listener: DanmuPlayCompleteListener) {
         this.danmuPlayCompleteListener = listener
+    }
+
+    // 添加新方法：找到最适合的行
+    private fun findBestRow(): Int {
+        var bestRow = 0
+        var maxEndX = Float.MIN_VALUE
+
+        // 遍历每一行，找到末尾弹幕最靠前的那一行
+        for (i in danmuRows.indices) {
+            val row = danmuRows[i]
+            val endX =
+                    if (row.isEmpty()) {
+                        Float.MIN_VALUE
+                    } else {
+                        row.last().x + row.last().width
+                    }
+
+            if (endX < maxEndX) {
+                maxEndX = endX
+                bestRow = i
+            }
+        }
+
+        return bestRow
     }
 }
