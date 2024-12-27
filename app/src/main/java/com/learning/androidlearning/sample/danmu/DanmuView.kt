@@ -5,9 +5,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -398,12 +400,44 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private fun drawDanmu(canvas: Canvas, holder: DanmuViewHolder) {
         // 绘制背景
         paint.style = Paint.Style.FILL
-        paint.shader =
-                DanmuConfig.createGradientShader(
-                        holder.width,
-                        holder.height,
-                        holder.danmuItem.style == DanmuItem.STYLE_1
-                )
+
+        // 计算渐变的起始和结束位置
+        val gradientStartX = holder.x
+        val gradientEndX = holder.x + holder.width
+
+        // 创建线性渐变
+        if (holder.danmuItem.style == DanmuItem.STYLE_1) {
+            paint.shader =
+                    LinearGradient(
+                            gradientStartX,
+                            0f,
+                            gradientEndX,
+                            0f,
+                            intArrayOf(
+                                    Color.parseColor("#FF4081"),
+                                    Color.parseColor("#FF6E40"),
+                                    Color.parseColor("#FF4081")
+                            ),
+                            null,
+                            Shader.TileMode.CLAMP
+                    )
+        } else {
+            paint.shader =
+                    LinearGradient(
+                            gradientStartX,
+                            0f,
+                            gradientEndX,
+                            0f,
+                            intArrayOf(
+                                    Color.parseColor("#2196F3"),
+                                    Color.parseColor("#00BCD4"),
+                                    Color.parseColor("#2196F3")
+                            ),
+                            null,
+                            Shader.TileMode.CLAMP
+                    )
+        }
+
         val cornerRadius = holder.height / 2
         canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
 
@@ -415,7 +449,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             canvas.drawRoundRect(holder.rect, cornerRadius, cornerRadius, paint)
         }
 
-        // 重置画笔样式
+        // 重置画笔样式和 shader
+        paint.shader = null
         paint.style = Paint.Style.FILL
         paint.color = Color.WHITE
 
