@@ -836,7 +836,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     // 添加新方法：找到最适合的行
     private fun findBestRow(): Int {
         var bestRow = 0
-        var maxEndX = Float.MIN_VALUE
+        var minEndX = Float.MAX_VALUE
 
         // 遍历每一行，找到末尾弹幕最靠前的那一行
         for (i in danmuRows.indices) {
@@ -848,8 +848,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                         row.last().x + row.last().width
                     }
 
-            if (endX < maxEndX) {
-                maxEndX = endX
+            // 如果这一行是空的，直接返回这一行
+            if (row.isEmpty()) {
+                return i
+            }
+
+            // 找到末尾位置最靠前的那一行
+            if (endX < minEndX) {
+                minEndX = endX
                 bestRow = i
             }
         }
