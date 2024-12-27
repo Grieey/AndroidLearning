@@ -7,6 +7,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
@@ -257,16 +259,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 .asBitmap()
                 .load(url)
                 .override(avatarSize.toInt(), avatarSize.toInt())
-                .circleCrop()
                 .into(
                         object : CustomTarget<Bitmap>() {
                             override fun onResourceReady(
                                     resource: Bitmap,
                                     transition: Transition<in Bitmap>?
                             ) {
-                                // 直接使用 Glide 的 circleCrop 后的位图，不需要再次处理
-                                avatarCache[url] = resource
-                                holder.avatarBitmap = resource
+                                // 创建圆形头像
+                                val circularBitmap = createCircularBitmap(resource)
+                                avatarCache[url] = circularBitmap
+                                holder.avatarBitmap = circularBitmap
                                 invalidate()
                             }
 
@@ -275,6 +277,37 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                             }
                         }
                 )
+    }
+
+    // 添加创建圆形位图的方法
+    private fun createCircularBitmap(source: Bitmap): Bitmap {
+        val size = minOf(source.width, source.height)
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val paint =
+                Paint().apply {
+                    isAntiAlias = true
+                    color = Color.WHITE
+                }
+
+        // 计算缩放和位置以确保图片居中且填充整个圆形区域
+        val scale = size.toFloat() / minOf(source.width, source.height)
+        val scaledWidth = source.width * scale
+        val scaledHeight = source.height * scale
+        val left = (size - scaledWidth) / 2f
+        val top = (size - scaledHeight) / 2f
+
+        // 绘制圆形
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+
+        // 设置 Xfermode 以保持圆形区域内的图像
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+
+        // 绘制缩放后的图片
+        val rect = RectF(left, top, left + scaledWidth, top + scaledHeight)
+        canvas.drawBitmap(source, null, rect, paint)
+
+        return output
     }
 
     private fun loadImage(url: String, holder: DanmuViewHolder) {
@@ -442,7 +475,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                             holder.x + paddingLeft + avatarSize,
                             holder.y - (holder.height - avatarSize) / 2 // 垂直居中
                     )
-            // 直接绘制圆形裁剪后的头像，不需要再次裁剪
+            // 直接绘制已经裁剪好的圆形头像
             canvas.drawBitmap(avatar, null, avatarRect, paint)
         }
 

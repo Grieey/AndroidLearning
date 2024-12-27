@@ -29,8 +29,8 @@ class DanmuDemoActivity : AppCompatActivity() {
 
     companion object {
         private const val BASE_URL =
-//                "aHR0cHM6Ly9pbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vNC80LmpwZw=="
-                "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
+                "aHR0cHM6Ly9pbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vNC80LmpwZw=="
+//                "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
     }
 
     private fun decodeBase64Url(base64Url: String): String {
