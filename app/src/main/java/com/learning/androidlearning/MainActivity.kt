@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.learning.androidlearning.home.HomeActivity
 import com.learning.androidlearning.sample.SampleComponentsActivity
 import com.learning.androidlearning.sample.SampleLayoutActivity
 import com.learning.androidlearning.sample.SampleViewPagerActivityJavaVersion
@@ -54,6 +55,10 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Add a button to navigate to com.learning.androidlearning.home.HomeActivity
+        val buttonToHome = findViewById<Button>(R.id.buttonToHomeActivity)
+        buttonToHome.setOnClickListener { HomeActivity.start(this) }
 
         // Add a button to navigate to SampleActivity
         val buttonToSample = findViewById<Button>(R.id.buttonToSampleActivity)
@@ -132,5 +137,4 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
-
 }

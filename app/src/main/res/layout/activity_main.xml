@@ -4,9 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:fillViewport="true"
     android:padding="16dp"
-    android:clipToPadding="false"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -15,13 +15,23 @@
         android:layout_height="wrap_content">
 
         <Button
-            android:id="@+id/buttonToSampleActivity"
+            android:id="@+id/buttonToHomeActivity"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Go to Sample Components"
+            android:text="Go to Home Demo"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/buttonToSampleActivity"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Go to Sample Components"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToHomeActivity" />
 
         <Button
             android:id="@+id/buttonToLayoutActivity"
@@ -117,7 +127,11 @@
             android:id="@+id/buttonToFlipClockActivity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Flip Clock Demo" />
+            android:layout_marginTop="8dp"
+            android:text="Flip Clock Demo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonToDialogActivity" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

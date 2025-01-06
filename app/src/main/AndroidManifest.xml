@@ -45,6 +45,9 @@
             android:name=".sample.flipclock.FlipClockDemoActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".home.HomeActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
