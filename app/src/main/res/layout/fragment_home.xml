@@ -24,21 +24,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="Welcome, "
+            android:text="Welcome !"
             android:textSize="24sp"
             app:layout_constraintStart_toEndOf="@id/ivAvatar"
             app:layout_constraintTop_toTopOf="@id/ivAvatar" />
-
-        <TextView
-            android:id="@+id/tvUsername"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/blue"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/tvWelcome"
-            app:layout_constraintTop_toTopOf="@id/tvWelcome"
-            tools:text="Yilin" />
 
         <!-- Leaderboard Section -->
         <androidx.cardview.widget.CardView
