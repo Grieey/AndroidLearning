@@ -32,7 +32,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun initViews(view: View) {
-        tvUsername = view.findViewById(R.id.tvUsername)
+        tvUsername = view.findViewById(R.id.tvWelcome)
         rvHotTopics = view.findViewById(R.id.rvHotTopics)
         tvLeaderboardUpdate = view.findViewById(R.id.tvLeaderboardUpdate)
 

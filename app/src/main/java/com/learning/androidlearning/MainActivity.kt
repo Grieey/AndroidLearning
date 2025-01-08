@@ -16,6 +16,7 @@ import com.learning.androidlearning.sample.danmu.DanmuDemoActivity
 import com.learning.androidlearning.sample.database.SampleDatabaseActivity
 import com.learning.androidlearning.sample.dialog.DialogDemoActivity
 import com.learning.androidlearning.sample.flipclock.FlipClockDemoActivity
+import com.learning.androidlearning.sample.gradient.GradientTextDemoActivity
 import com.learning.androidlearning.sample.profile.SampleProfileActivityJavaVersion
 import com.learning.androidlearning.sample.schedule.ScheduleActivityWithJava
 import com.learning.androidlearning.sample.schedule.ScheduleGridActivity
@@ -134,6 +135,13 @@ class MainActivity : AppCompatActivity() {
         val buttonToFlipClock = findViewById<Button>(R.id.buttonToFlipClockActivity)
         buttonToFlipClock.setOnClickListener {
             val intent = Intent(this, FlipClockDemoActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Add a button to navigate to GradientTextDemoActivity
+        val buttonToGradientText = findViewById<Button>(R.id.buttonToGradientTextActivity)
+        buttonToGradientText.setOnClickListener {
+            val intent = Intent(this, GradientTextDemoActivity::class.java)
             startActivity(intent)
         }
     }
