@@ -29,8 +29,7 @@ class DanmuDemoActivity : AppCompatActivity() {
 
     companion object {
         private const val BASE_URL = "aHR0cHM6Ly9pbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vNC80LmpwZw=="
-        //
-        // "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
+        private const val BASE_URL_2 = "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
     }
 
     private fun decodeBase64Url(base64Url: String): String {
@@ -45,11 +44,11 @@ class DanmuDemoActivity : AppCompatActivity() {
     private fun generateDanmuList(count: Int, startIndex: Int = 0): List<DanmuItem> {
         return List(count) { index ->
             DanmuItem(
-                    avatar = decodeBase64Url(BASE_URL),
-                    username = "用户${startIndex + index}",
-                    content = "[批次${currentBatchNumber}]这是第${startIndex + index}条测试弹幕",
-                    image = "ic_red_packet",
-                    style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
+                avatar = decodeBase64Url(if (index % 2 == 0) BASE_URL else BASE_URL_2),
+                username = "用户${startIndex + index}",
+                content = "[批次${currentBatchNumber}]这是第${startIndex + index}条测试弹幕",
+                image = "ic_red_packet",
+                style = if (index % 2 == 0) DanmuItem.STYLE_1 else DanmuItem.STYLE_2
             )
         }
     }
@@ -93,14 +92,14 @@ class DanmuDemoActivity : AppCompatActivity() {
         }
 
         danmuView.setDanmuPlayCompleteListener(
-                object : DanmuPlayCompleteListener {
-                    override fun onDanmuPlayComplete() {
-                        runOnUiThread {
-                            Toast.makeText(this@DanmuDemoActivity, "弹幕播放完成", Toast.LENGTH_SHORT)
-                                    .show()
-                        }
+            object : DanmuPlayCompleteListener {
+                override fun onDanmuPlayComplete() {
+                    runOnUiThread {
+                        Toast.makeText(this@DanmuDemoActivity, "弹幕播放完成", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
+            }
         )
     }
 
@@ -113,19 +112,19 @@ class DanmuDemoActivity : AppCompatActivity() {
         danmuView.post { updateDanmuVisibility() }
 
         danmuView.viewTreeObserver.addOnGlobalLayoutListener(
-                object : ViewTreeObserver.OnGlobalLayoutListener {
-                    override fun onGlobalLayout() {
-                        updateDanmuVisibility()
-                    }
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    updateDanmuVisibility()
                 }
+            }
         )
 
         findViewById<NestedScrollView>(R.id.scrollView)
-                .setOnScrollChangeListener(
-                        NestedScrollView.OnScrollChangeListener { _, _, _, _, _ ->
-                            updateDanmuVisibility()
-                        }
-                )
+            .setOnScrollChangeListener(
+                NestedScrollView.OnScrollChangeListener { _, _, _, _, _ ->
+                    updateDanmuVisibility()
+                }
+            )
     }
 
     private fun setupButtonListeners() {
@@ -133,15 +132,15 @@ class DanmuDemoActivity : AppCompatActivity() {
             val content = danmuInput.text?.toString()
             if (!content.isNullOrEmpty()) {
                 val newDanmu =
-                        DanmuItem(
-                                avatar = decodeBase64Url(BASE_URL),
-                                username = "用户名",
-                                content = "[批次${currentBatchNumber}]$content",
-                                image = "ic_red_packet",
-                                style =
-                                        if (Random.nextBoolean()) DanmuItem.STYLE_1
-                                        else DanmuItem.STYLE_2
-                        )
+                    DanmuItem(
+                        avatar = decodeBase64Url(BASE_URL),
+                        username = "用户名",
+                        content = "[批次${currentBatchNumber}]$content",
+                        image = "ic_red_packet",
+                        style =
+                        if (Random.nextBoolean()) DanmuItem.STYLE_1
+                        else DanmuItem.STYLE_2
+                    )
                 val list = listOf(newDanmu)
                 danmuView.setDanmuList(list)
                 danmuInput.text?.clear()
@@ -177,9 +176,9 @@ class DanmuDemoActivity : AppCompatActivity() {
             findViewById<NestedScrollView>(R.id.scrollView).getGlobalVisibleRect(parentRect)
 
             val isVisible =
-                    danmuRect.top >= parentRect.top &&
-                            danmuRect.bottom <= parentRect.bottom &&
-                            danmuRect.height() > 0
+                danmuRect.top >= parentRect.top &&
+                        danmuRect.bottom <= parentRect.bottom &&
+                        danmuRect.height() > 0
 
             if (!isVisible && !isPaused) {
                 pauseDanmu()
@@ -205,11 +204,11 @@ class DanmuDemoActivity : AppCompatActivity() {
 
     private fun updateStatusText() {
         val status =
-                when {
-                    isUserPaused -> "状态：用户暂停"
-                    isPaused -> "状态：自动暂停"
-                    else -> "状态：播放中"
-                }
+            when {
+                isUserPaused -> "状态：用户暂停"
+                isPaused -> "状态：自动暂停"
+                else -> "状态：播放中"
+            }
         statusText.text = status
     }
 
