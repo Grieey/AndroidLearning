@@ -49,10 +49,21 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <com.learning.androidlearning.sample.danmu.DanmuGLView
-                android:id="@+id/danmuView"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="200dp" />
+                android:layout_height="130dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_square_danmu" />
+
+                <com.learning.androidlearning.sample.danmu.DanmuGLView
+                    android:id="@+id/danmuView"
+                    android:layout_width="match_parent"
+                    android:layout_height="130dp" />
+            </FrameLayout>
+
 
             <View
                 android:id="@+id/spacer"

@@ -604,53 +604,46 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     }
 
     private fun loadImage(url: String, holder: DanmuGLViewHolder) {
-        android.util.Log.d("DanmuGLRenderer", "Loading image from url: $url")
-        // 对于本地图片资源，直接从资源加载
-        if (url.startsWith("ic_")) {
-            val resourceId = context.resources.getIdentifier(url, "drawable", context.packageName)
-            if (resourceId != 0) {
-                android.util.Log.d(
-                        "DanmuGLRenderer",
-                        "Found resource id: $resourceId for url: $url"
-                )
-                Glide.with(context)
-                        .asBitmap()
-                        .load(resourceId)
-                        .override(imageSize.toInt(), imageSize.toInt())
-                        .into(
-                                object : CustomTarget<Bitmap>() {
-                                    override fun onResourceReady(
-                                            resource: Bitmap,
-                                            transition: Transition<in Bitmap>?
-                                    ) {
-                                        android.util.Log.d(
-                                                "DanmuGLRenderer",
-                                                "Image loaded successfully, size: ${resource.width}x${resource.height}"
-                                        )
-                                        holder.imageBitmap = resource
-                                        glSurfaceView.queueEvent {
-                                            createImageTexture(resource, holder)
-                                        }
-                                    }
-
-                                    override fun onLoadCleared(placeholder: Drawable?) {
-                                        holder.imageBitmap?.recycle()
-                                        holder.imageBitmap = null
-                                        if (holder.imageTextureId != -1) {
-                                            GLES20.glDeleteTextures(
-                                                    1,
-                                                    intArrayOf(holder.imageTextureId),
-                                                    0
-                                            )
-                                            holder.imageTextureId = -1
-                                        }
+        android.util.Log.d("DanmuGLRenderer", "Loading image from resource: ic_red_packet")
+        val resourceId =
+                context.resources.getIdentifier("ic_red_packet", "drawable", context.packageName)
+        if (resourceId != 0) {
+            Glide.with(context)
+                    .asBitmap()
+                    .load(resourceId)
+                    .override(imageSize.toInt(), imageSize.toInt())
+                    .into(
+                            object : CustomTarget<Bitmap>() {
+                                override fun onResourceReady(
+                                        resource: Bitmap,
+                                        transition: Transition<in Bitmap>?
+                                ) {
+                                    android.util.Log.d(
+                                            "DanmuGLRenderer",
+                                            "Image loaded successfully, size: ${resource.width}x${resource.height}"
+                                    )
+                                    holder.imageBitmap = resource
+                                    glSurfaceView.queueEvent {
+                                        createImageTexture(resource, holder)
                                     }
                                 }
-                        )
-            } else {
-                android.util.Log.e("DanmuGLRenderer", "Resource not found: $url")
-            }
-            return
+
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                    holder.imageBitmap?.recycle()
+                                    holder.imageBitmap = null
+                                    if (holder.imageTextureId != -1) {
+                                        GLES20.glDeleteTextures(
+                                                1,
+                                                intArrayOf(holder.imageTextureId),
+                                                0
+                                        )
+                                        holder.imageTextureId = -1
+                                    }
+                                }
+                            }
+                    )
+        } else {
+            android.util.Log.e("DanmuGLRenderer", "Resource ic_red_packet not found")
         }
     }
 
