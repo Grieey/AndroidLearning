@@ -25,10 +25,13 @@ class DanmuGLViewHolder(
 
     // 背景顶点坐标
     var backgroundVertices: FloatArray = FloatArray(12)
+
     // 头像顶点坐标
     var avatarVertices: FloatArray = FloatArray(12)
+
     // 文本顶点坐标
     var textVertices: FloatArray = FloatArray(12)
+
     // 图片顶点坐标
     var imageVertices: FloatArray = FloatArray(12)
 
@@ -173,20 +176,11 @@ class DanmuGLViewHolder(
             GLES20.glDeleteTextures(1, intArrayOf(avatarTextureId), 0)
             avatarTextureId = -1
         }
-        if (imageTextureId != -1) {
-            GLES20.glDeleteTextures(1, intArrayOf(imageTextureId), 0)
-            imageTextureId = -1
-        }
+        // 不删除共享的红包纹理，只重置引用
+        imageTextureId = -1
         avatarBitmap?.recycle()
         imageBitmap?.recycle()
         avatarBitmap = null
         imageBitmap = null
-    }
-
-    companion object {
-        private const val paddingLeft = 16f
-        private const val avatarSize = 40f
-        private const val imageSize = 40f
-        private const val imageMarginLeft = 8f
     }
 }

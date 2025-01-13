@@ -33,6 +33,7 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     private var texCoordHandle = 0
     private var mvpMatrixHandle = 0
     private var textureHandle = 0
+    private var redPacketTextureId = -1 // 共享的红包图标纹理ID
 
     private val mvpMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
@@ -126,6 +127,9 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
         ) {
             throw RuntimeException("Failed to get shader handles")
         }
+
+        // 加载红包纹理
+        loadRedPacketTexture()
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -276,7 +280,7 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
         }
 
         // 绘制图片
-        if (holder.imageTextureId != -1) {
+        if (holder.imageTextureId > 0) { // 只绘制有效的纹理ID
             vertexBuffer.clear()
             vertexBuffer.put(holder.imageVertices)
             vertexBuffer.position(0)
@@ -604,7 +608,17 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     }
 
     private fun loadImage(url: String, holder: DanmuGLViewHolder) {
-        android.util.Log.d("DanmuGLRenderer", "Loading image from resource: ic_red_packet")
+        // 如果红包纹理已经加载，直接使用
+        if (redPacketTextureId != -1) {
+            holder.imageTextureId = redPacketTextureId
+        } else {
+            // 如果还没有加载，先加载纹理，并设置一个临时标记
+            holder.imageTextureId = -2 // 使用-2表示等待加载
+            loadRedPacketTexture()
+        }
+    }
+
+    private fun loadRedPacketTexture() {
         val resourceId =
                 context.resources.getIdentifier("ic_red_packet", "drawable", context.packageName)
         if (resourceId != 0) {
@@ -618,44 +632,27 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
                                         resource: Bitmap,
                                         transition: Transition<in Bitmap>?
                                 ) {
-                                    android.util.Log.d(
-                                            "DanmuGLRenderer",
-                                            "Image loaded successfully, size: ${resource.width}x${resource.height}"
-                                    )
-                                    holder.imageBitmap = resource
-                                    glSurfaceView.queueEvent {
-                                        createImageTexture(resource, holder)
-                                    }
+                                    glSurfaceView.queueEvent { createRedPacketTexture(resource) }
                                 }
 
                                 override fun onLoadCleared(placeholder: Drawable?) {
-                                    holder.imageBitmap?.recycle()
-                                    holder.imageBitmap = null
-                                    if (holder.imageTextureId != -1) {
-                                        GLES20.glDeleteTextures(
-                                                1,
-                                                intArrayOf(holder.imageTextureId),
-                                                0
-                                        )
-                                        holder.imageTextureId = -1
-                                    }
+                                    // 不需要在这里处理清理，因为这是共享纹理
                                 }
                             }
                     )
-        } else {
-            android.util.Log.e("DanmuGLRenderer", "Resource ic_red_packet not found")
         }
     }
 
-    private fun createImageTexture(bitmap: Bitmap, holder: DanmuGLViewHolder) {
-        android.util.Log.d("DanmuGLRenderer", "Creating image texture")
+    private fun createRedPacketTexture(bitmap: Bitmap) {
         try {
             // 创建纹理
             val textureIds = IntArray(1)
             GLES20.glGenTextures(1, textureIds, 0)
-            holder.imageTextureId = textureIds[0]
+            val newTextureId = textureIds[0]
 
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, holder.imageTextureId)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, newTextureId)
+
+            // 设置纹理参数
             GLES20.glTexParameteri(
                     GLES20.GL_TEXTURE_2D,
                     GLES20.GL_TEXTURE_MIN_FILTER,
@@ -676,14 +673,43 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
                     GLES20.GL_TEXTURE_WRAP_T,
                     GLES20.GL_CLAMP_TO_EDGE
             )
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
 
-            android.util.Log.d(
-                    "DanmuGLRenderer",
-                    "Image texture created successfully with id: ${holder.imageTextureId}"
-            )
+            // 确保图片格式是 ARGB_8888
+            val argbBitmap =
+                    if (bitmap.config != Bitmap.Config.ARGB_8888) {
+                        val newBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                        bitmap.recycle()
+                        newBitmap
+                    } else {
+                        bitmap
+                    }
+
+            // 上传纹理到 GPU
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, argbBitmap, 0)
+
+            // 如果之前有纹理，先删除
+            if (redPacketTextureId != -1) {
+                GLES20.glDeleteTextures(1, intArrayOf(redPacketTextureId), 0)
+            }
+
+            // 更新纹理ID
+            redPacketTextureId = newTextureId
+
+            // 更新所有等待加载的弹幕的图片纹理ID
+            danmuRows.forEach { row ->
+                row.forEach { holder ->
+                    if (holder.imageTextureId == -2 || holder.imageTextureId == -1) {
+                        holder.imageTextureId = redPacketTextureId
+                    }
+                }
+            }
+
+            if (argbBitmap != bitmap) {
+                argbBitmap.recycle()
+            }
+            bitmap.recycle()
         } catch (e: Exception) {
-            android.util.Log.e("DanmuGLRenderer", "Error creating image texture", e)
+            android.util.Log.e("DanmuGLRenderer", "Error creating red packet texture", e)
         }
     }
 
@@ -770,8 +796,17 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     }
 
     fun clearCurrentDanmu() {
+        // 只清理弹幕资源，不清理共享纹理
         danmuRows.forEach { row ->
-            row.forEach { holder -> holder.release() }
+            row.forEach { holder ->
+                // 清理头像等资源，但保留共享的红包纹理ID
+                if (holder.avatarTextureId != -1) {
+                    GLES20.glDeleteTextures(1, intArrayOf(holder.avatarTextureId), 0)
+                    holder.avatarTextureId = -1
+                }
+                holder.avatarBitmap?.recycle()
+                holder.avatarBitmap = null
+            }
             row.clear()
         }
     }
@@ -790,6 +825,8 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
         isPaused = false
         lastFrameTime = System.nanoTime()
         clearCurrentDanmu()
+        // 重新加载红包纹理
+        loadRedPacketTexture()
     }
 
     fun setOnNeedMoreDanmuListener(listener: () -> Unit) {
