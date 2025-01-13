@@ -49,10 +49,10 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <com.learning.androidlearning.sample.danmu.DanmuView
+            <com.learning.androidlearning.sample.danmu.DanmuGLView
                 android:id="@+id/danmuView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="200dp"
                 android:background="#e9ffffff" />
 
             <View

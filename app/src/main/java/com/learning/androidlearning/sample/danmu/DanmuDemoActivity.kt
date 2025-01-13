@@ -15,7 +15,7 @@ import com.learning.androidlearning.R
 import kotlin.random.Random
 
 class DanmuDemoActivity : AppCompatActivity() {
-    private lateinit var danmuView: DanmuView
+    private lateinit var danmuView: DanmuGLView
     private lateinit var danmuInput: TextInputEditText
     private lateinit var sendButton: Button
     private lateinit var replayButton: Button
@@ -28,9 +28,9 @@ class DanmuDemoActivity : AppCompatActivity() {
     private var currentBatchNumber = 1
 
     companion object {
-        private const val BASE_URL =
-                "aHR0cHM6Ly9pbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vNC80LmpwZw=="
-//                "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
+        private const val BASE_URL = "aHR0cHM6Ly9pbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vNC80LmpwZw=="
+        //
+        // "aHR0cHM6Ly9hbGlpbWcuY2hhbmdiYS5jb20vY2FjaGUvcGhvdG8vOTc2NTMyODc5XzIwMF8yMDAuanBn"
     }
 
     private fun decodeBase64Url(base64Url: String): String {
@@ -73,7 +73,9 @@ class DanmuDemoActivity : AppCompatActivity() {
     }
 
     private fun setupDanmuView() {
-        danmuView.setDanmuList(generateDanmuList(30))
+        danmuView.post {
+            danmuView.setDanmuList(generateDanmuList(30))
+        }
         currentDanmuIndex = 30
 
         danmuView.setOnNeedMoreDanmuListener {
@@ -83,11 +85,7 @@ class DanmuDemoActivity : AppCompatActivity() {
             }
             val newDanmuList = generateDanmuList(30, currentDanmuIndex)
             currentDanmuIndex += 30
-            newDanmuList.forEach { danmu -> danmuView.addDanmu(danmu) }
-        }
-
-        danmuView.setOnDanmuCompleteListener { danmu ->
-            Log.d("DanmuDemo", "Danmu completed: ${danmu.content}")
+            danmuView.setDanmuList(newDanmuList)
         }
 
         danmuView.setOnDanmuClickListener { danmu ->
@@ -144,7 +142,8 @@ class DanmuDemoActivity : AppCompatActivity() {
                                         if (Random.nextBoolean()) DanmuItem.STYLE_1
                                         else DanmuItem.STYLE_2
                         )
-                danmuView.addDanmu(newDanmu)
+                val list = listOf(newDanmu)
+                danmuView.setDanmuList(list)
                 danmuInput.text?.clear()
             }
         }
