@@ -149,7 +149,13 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     }
 
     override fun onDrawFrame(gl: GL10?) {
-        if (isPaused) return
+        if (isPaused) {
+            // 暂停状态下只需要绘制当前帧，不更新位置
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+            GLES20.glUseProgram(programId)
+            drawDanmus()
+            return
+        }
 
         // 清除颜色缓冲区
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
