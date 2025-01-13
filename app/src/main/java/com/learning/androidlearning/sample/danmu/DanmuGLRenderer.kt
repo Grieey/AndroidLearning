@@ -87,6 +87,7 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     private val scrollSpeed = 200f // 每秒移动的像素数
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        // 使用完全透明的清屏颜色
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
@@ -146,6 +147,7 @@ class DanmuGLRenderer(private val context: Context, private val glSurfaceView: G
     override fun onDrawFrame(gl: GL10?) {
         if (isPaused) return
 
+        // 清除颜色缓冲区
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
         // 使用着色器程序

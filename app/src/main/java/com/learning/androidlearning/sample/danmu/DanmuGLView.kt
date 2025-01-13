@@ -16,6 +16,12 @@ class DanmuGLView @JvmOverloads constructor(context: Context, attrs: AttributeSe
 
     private fun initializeGLView() {
         try {
+            // 设置透明背景
+            setZOrderOnTop(true)
+            // 使用 RGBA_8888 格式
+            setEGLConfigChooser(8, 8, 8, 8, 0, 0)
+            holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
+
             // 设置 OpenGL ES 2.0 context
             setEGLContextClientVersion(2)
 
@@ -31,11 +37,6 @@ class DanmuGLView @JvmOverloads constructor(context: Context, attrs: AttributeSe
 
             // 保持屏幕常亮
             keepScreenOn = true
-
-            // 设置透明背景
-            setZOrderOnTop(true)
-            setEGLConfigChooser(8, 8, 8, 8, 16, 0)
-            holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
         } catch (e: Exception) {
             Log.e("DanmuGLView", "Failed to initialize GLView", e)
         }
