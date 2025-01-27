@@ -51,6 +51,7 @@
         <activity
             android:name=".home.HomeActivity"
             android:exported="false" />
+        <activity android:name=".demo.ConstraintLayoutDemoActivity" />
     </application>
 
 </manifest>

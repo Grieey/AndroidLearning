@@ -1,11 +1,12 @@
 package com.learning.androidlearning.home
 
-
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.learning.androidlearning.R
+import com.learning.androidlearning.demo.ConstraintLayoutDemoActivity
 
 class HomeActivity : AppCompatActivity() {
 
@@ -17,6 +18,10 @@ class HomeActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.container, HomeFragment.newInstance())
                 .commit()
+        }
+
+        findViewById<Button>(R.id.btnConstraintDemo).setOnClickListener {
+            ConstraintLayoutDemoActivity.start(this)
         }
     }
 
